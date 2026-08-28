@@ -1,0 +1,1197 @@
+# Shineovative WhatsApp CRM — Implementation & Progress Tracker
+
+> **Purpose:** This is the persistent implementation plan, decision log, progress tracker, test record, and session handoff file for customizing the upstream `wacrm` project into the Shineovative Solutions WhatsApp CRM. Every coding session must read this file first and update it continuously.
+>
+> **Scope principle:** Prefer the fastest, lowest-risk path from working upstream clone → stable local baseline → configuration-driven Shineovative branding → excellent application UI → a few high-value CRM improvements → regression-tested internal release → reusable client deployments. Do not rebuild stable upstream functionality without a demonstrated reason.
+
+---
+
+## Progress Summary
+
+| Item | Current state |
+|---|---|
+| **Overall completion** | **0%** |
+| **Current stage** | **Stage 1 — Local Development Baseline** |
+| **Current task** | S1.1 — Verify Local Prerequisites and Repository State |
+| **Completed stages** | None |
+| **Remaining stages** | Stages 1–7 |
+| **Blockers/issues** | No implementation blocker yet. Exact Shineovative CSS tokens/fonts/favicon must be verified from the live site DOM/assets before Stage 3 implementation; Meta test credentials and local tunnel availability must be verified during Stage 1. |
+| **Last updated** | **2026-08-28 11:06 IST (+05:30)** |
+
+### Tracking Markers
+
+- `[ ]` Not started
+- `[~]` In progress
+- `[x]` Completed and verified
+- `[!]` Blocked / needs attention / decision required
+
+### Stage Weights for Overall Completion
+
+Use these weights when updating the overall percentage. Do not mark a stage complete until its acceptance criteria pass.
+
+| Stage | Weight |
+|---|---:|
+| Stage 1 — Local Development Baseline | 12% |
+| Stage 2 — Shineovative Product Foundation | 12% |
+| Stage 3 — Complete UI/UX Redesign | 30% |
+| Stage 4 — Practical CRM Feature Improvements | 18% |
+| Stage 5 — WhatsApp + Core Regression Testing | 15% |
+| Stage 6 — Shineovative Internal Release | 8% |
+| Stage 7 — Client-Ready Productization | 5% |
+| **Total** | **100%** |
+
+---
+
+## Mandatory Session Handoff Protocol
+
+Every AI/development session must follow this sequence before changing code:
+
+1. Read this entire `IMPLEMENTATION.md`.
+2. Read root `AGENTS.md` and follow its Next.js-version warning before editing Next.js code.
+3. Check current Git branch/status/diff and confirm whether an `[~]` task already has unfinished work.
+4. Read **Progress Summary**, **Changes Implemented**, **Testing Results**, **Known Issues / Technical Debt**, and **Decisions Made**.
+5. Continue the current `[~]` task before starting a new task unless it is explicitly blocked.
+6. Update this file when:
+   - a task starts;
+   - an implementation decision is made;
+   - a blocker is found or cleared;
+   - code/data/config is changed;
+   - a test is run;
+   - a task/stage is completed.
+7. Before ending a session, update:
+   - overall completion %;
+   - current stage/current task;
+   - completed/remaining stages;
+   - blockers;
+   - last updated time;
+   - exact next action for the next session.
+8. Never mark `[x]` merely because code was written. A task is complete only after its acceptance criteria and required tests pass.
+
+### Change Discipline
+
+- Keep commits/tasks small enough to review and revert.
+- Prefer configuration and UI-layer changes over backend rewrites.
+- Preserve existing API/database identifiers when a UI label alone can change.
+- Add new migrations for schema changes. **Never rewrite historical migrations.**
+- When upstream behavior is unclear, inspect the current implementation/tests before changing it.
+- Record any deliberate upstream divergence in **Decisions Made**.
+
+---
+
+# Repository Baseline Reference
+
+This section records what was verified from the freshly cloned repository before customization. It is context for future sessions; it is not a substitute for Stage 1 runtime verification.
+
+## Verified Technical Baseline
+
+- Package: `wacrm`, repository package version `0.8.0`.
+- Framework: Next.js `16.2.12`, React `19.2.4`, TypeScript `6`.
+- Styling/UI: Tailwind CSS 4, Base UI/shadcn-style components, Lucide icons.
+- Data/backend: Supabase / PostgreSQL; local config currently targets PostgreSQL 17.
+- Supabase capabilities used: Auth, RLS, Realtime, Storage; optional pgvector for AI knowledge semantic search.
+- WhatsApp integration: official Meta WhatsApp Business Cloud API.
+- Authentication roles found: owner, admin, agent, viewer.
+- AI: bring-your-own OpenAI/Anthropic keys; encrypted at rest using the project encryption layer.
+- Existing major application areas: dashboard, inbox, notifications, contacts, pipelines/deals, broadcasts, automations, flows, AI agents/assistant functionality, settings/team, API keys/webhooks.
+- Existing migration history: `001` through `039`.
+- Recent reliability migrations already present:
+  - `037_webhook_broadcast_reliability.sql`
+  - `038_broadcast_resume.sql`
+  - `039_inbound_media_mirror.sql`
+- `deals` already contains `conversation_id`, meaning **Conversation → Deal can likely be implemented mostly as a UX/workflow improvement rather than a new relationship schema**.
+- `contacts` already contains `company`.
+- Current global theme architecture already separates neutral mode tokens from accent tokens in `src/app/globals.css` and `src/lib/themes.ts`; this is a good base for brand configuration rather than a reason to rewrite theming from scratch.
+- Current root font is `Inter` via `next/font/google`.
+- Current navigation is centralized in `src/components/layout/sidebar.tsx`; topbar titles are centralized in `src/components/layout/header.tsx`; translations live in `messages/`.
+
+## Protected Upstream Reliability Areas
+
+The following are considered **protected surfaces**. Changes require a specific bug/requirement, targeted tests, and a documented reason:
+
+- Supabase Auth and existing RLS logic.
+- Account/tenant isolation and membership/role logic.
+- WhatsApp webhook parsing/handling.
+- Meta webhook signature verification.
+- Credential/token encryption.
+- Message/webhook idempotency and deduplication.
+- Broadcast transaction/retry/resume behavior.
+- Inbound media mirroring/storage behavior.
+- Existing migration history (`001`–`039`).
+
+Relevant existing modules include, but are not limited to:
+
+- `src/lib/auth/*`
+- `src/lib/account/*`
+- `src/lib/whatsapp/*`
+- `src/lib/webhooks/*`
+- `src/lib/media/*`
+- `src/lib/storage/*`
+- `supabase/migrations/*`
+
+---
+
+# Shineovative Brand/UI Reference
+
+> **Rule:** Only verified values may become implementation tokens. Anything not conclusively visible from current public sources is explicitly marked for verification. Do not estimate hex colors or infer font names from appearance.
+
+## Research Sources Checked — 28 Aug 2026
+
+1. Live homepage: `https://shineovative.com/`
+2. Contact page: `https://shineovative.com/contact`
+3. Current indexed homepage logo asset reference surfaced as: `/updated-assets/shinovative-logo.webp`
+4. Service/content pages reviewed for wording and visual/content patterns:
+   - `/services/ecommerce-solutions`
+   - `/services/agentic-development`
+   - `/blog/ai-automation-for-businesses`
+   - `/blog/rank-number-one-on-google`
+
+## Verified Brand/Company Information
+
+| Item | Verified reference / decision |
+|---|---|
+| Official company name for CRM | **Shineovative Solutions**. The current site repeatedly uses this name and explicitly advises consistency of the company name. |
+| Website | `shineovative.com` |
+| Public email | `info@shineovative.com` |
+| Public WhatsApp | `+91 9652006000` |
+| India location | Hyderabad, Telangana, India |
+| US presence wording | Remote-first operations serving all US time zones |
+| Service regions | USA, India, Saudi Arabia & globally |
+| Current footer | © 2026 Shineovative Solutions. All rights reserved. |
+| Current logo asset reference | `/updated-assets/shinovative-logo.webp` |
+| Current logo appearance | Metallic/interlocking three-loop emblem with dark graphite/black and silver treatment, blue/cyan light accents, and a `SHINOVATIVE SOLUTIONS` wordmark in the indexed asset. Note: asset path/wordmark artwork spells `SHINOVATIVE`; product/company text in the CRM must use the verified company spelling **Shineovative Solutions** unless the owner explicitly approves another wordmark asset. |
+
+## Verified Marketing-Site Visual/Interaction Patterns Worth Translating to the CRM
+
+These are **design-language references**, not instructions to clone the marketing page:
+
+- Strong outcome-first headline hierarchy.
+- Clean, premium, high-contrast presentation.
+- Metric/KPI cards and a “live dashboard” presentation pattern are already part of the public brand language.
+- Repeated use of small status/assurance badges (rating, guarantee, WhatsApp support, no-contract messaging).
+- Compact cards for diagnostic/business metrics.
+- Before/after comparison structure.
+- Clear, high-intent CTA buttons.
+- Visual emphasis on leads, calls, rankings, revenue, and operational outcomes rather than vanity metrics.
+- Minimal/premium AI illustrations are used on current AI content pages.
+- The current logo introduces metallic graphite/silver with electric blue/cyan highlights; these may inform the application identity **only after exact web/app tokens are captured**.
+
+### Dashboard-Applicable Translation
+
+Use the website language as inspiration for an application, not a marketing-page copy:
+
+- KPI cards: unread conversations, follow-ups due, open deals, response time, campaign outcomes.
+- Small “live/realtime” indicators where the underlying data is actually realtime.
+- Status chips with concise wording.
+- Strong information hierarchy: page outcome → primary action → operating metrics → work queue.
+- Cards should support fast scanning and action, not decorative marketing sections.
+- Avoid excessive gradients/hero effects inside dense CRM workspaces.
+
+## Brand Values That Must Be Verified Before Stage 3 Code
+
+The indexed/text research available during planning did **not** expose the live site's computed CSS. Therefore the following must be inspected from the actual live DOM/CSS/assets before they are written into our design tokens:
+
+- `[!]` Exact primary color(s).
+- `[!]` Exact secondary/accent color(s).
+- `[!]` Exact gradients and gradient stops.
+- `[!]` Exact website font family/families.
+- `[!]` Exact font weights actually loaded.
+- `[!]` Exact heading/body size scale.
+- `[!]` Exact button radius/padding/border treatment.
+- `[!]` Exact card radius/border treatment.
+- `[!]` Exact shadow values.
+- `[!]` Exact spacing rhythm/grid/container widths.
+- `[!]` Current favicon URL/file and variants.
+- `[!]` Any alternate horizontal/icon-only/dark/light logo variants actually available on the site.
+- `[!]` Any custom icon set vs standard icon library usage.
+
+### Required Method for Resolving the Above
+
+Before Stage 3 implementation begins, use a real browser/devtools or browser-capable coding agent to:
+
+1. Inspect computed styles on homepage header, hero, CTA buttons, cards, section backgrounds, footer.
+2. Inspect network/source for loaded CSS variables and font files/names.
+3. Record exact color values and font metadata here.
+4. Record favicon/logo asset URLs and dimensions.
+5. Capture at least desktop + mobile screenshots for visual reference.
+6. Verify assets are Shineovative-owned/approved before copying into this repository.
+7. Update this reference table before changing `globals.css` or app typography.
+
+## Asset Reuse Rules
+
+- Safe candidate: current Shineovative logo asset referenced above, subject to confirming it is the approved current company asset.
+- Favicon should come from the current site only after exact asset verification.
+- Company-owned original illustrations may be reused where appropriate, but a CRM should favor functional UI over marketing imagery.
+- Do not copy third-party stock photography, embedded customer images, review platform assets, or externally licensed imagery unless licensing/ownership is confirmed.
+
+---
+
+# Decisions Requiring Owner Approval Before Implementation
+
+- `[!] D-001 Product display name:` Recommended working name **“Shineovative WhatsApp CRM”**. Approve or provide final product name.
+- `[!] D-002 Logo:` Confirm whether `/updated-assets/shinovative-logo.webp` is the correct current logo to use, or provide the preferred production logo files/variants.
+- `[!] D-003 Theme behavior:` Recommended: retain light/dark mode capability, but make brand accent(s) deployment-controlled rather than exposing five unrelated upstream accent themes by default. Approve.
+- `[!] D-004 Internal signup:` Recommended: disable/hide public self-signup for the internal Shineovative deployment and use owner/admin invitation flow. Approve.
+- `[!] D-005 Terminology:` Recommended UI labels:
+  - `Pipelines` → **Deals**
+  - `Broadcasts` → **Campaigns**
+  - `AI Agents` → **AI Assistant**
+  - Keep `Automations` and `Flows` as separate underlying routes, but group them under one logical **Automation** navigation section if the resulting UX is clearer.
+- `[!] D-006 Support details inside CRM:` Confirm whether public `info@shineovative.com` / `+91 9652006000` should appear in app help/support UI or only on client-facing deployments.
+- `[!] D-007 Default Stage 6 sales pipeline/tags:` Define with real Shineovative workflow before seeding production defaults; do not invent production stages without approval.
+
+---
+
+# Stage 1 — Local Development Baseline
+
+**Goal:** Prove the unmodified upstream clone works locally and establish a written baseline so later failures can be attributed to our changes.
+
+**Stage status:** `[ ] Not started`
+
+## S1.1 — Verify Local Prerequisites and Repository State
+
+- **Objective:** Confirm the machine can run the existing stack without changing application code.
+- **Likely files/modules affected:** None; documentation/tracking only unless a missing local-only config file is needed later.
+- **Implementation approach:**
+  - [x] Confirm supported Node.js (`>=20`) and npm availability.
+  - [~] Confirm Docker Desktop/engine is running.
+  - [~] Confirm Supabase CLI availability or install as a dev dependency/local tool using the project-supported approach.
+  - [~] Confirm no unexpected working-tree changes before baseline setup.
+  - [x] Read `AGENTS.md`, `README.md`, `docs/`, `.env.local.example`, `supabase/config.toml`.
+- **Dependencies:** Node/npm, Docker, Supabase CLI.
+- **Acceptance criteria:** Versions recorded; Docker healthy; repository starts from a known clean state.
+- **Testing required:** Version/health commands only.
+- **Status:** `[~]`
+
+## S1.2 — Start Fully Local Supabase Stack
+
+- **Objective:** Run PostgreSQL/Auth/Storage locally and replay the repository's complete migration history.
+- **Likely files/modules affected:** `supabase/config.toml`, `supabase/migrations/*`, local generated Supabase state (do not modify historical migrations).
+- **Implementation approach:**
+  - [ ] Start Supabase locally.
+  - [ ] Record local API URL, anon key, service-role key, Studio URL, DB URL.
+  - [ ] Run/reset database to replay migrations `001`–`039` in order.
+  - [ ] Confirm Auth service starts.
+  - [ ] Confirm Storage service/buckets required by current app can initialize.
+  - [ ] Inspect migration output for warnings/errors.
+- **Dependencies:** Docker + Supabase CLI.
+- **Acceptance criteria:** All existing migrations apply cleanly to a fresh local database; Supabase Studio is accessible; required services healthy.
+- **Testing required:** Fresh reset/replay at least once.
+- **Status:** `[ ]`
+
+## S1.3 — Local Environment Configuration
+
+- **Objective:** Create a valid local runtime configuration without committing secrets.
+- **Likely files/modules affected:** `.env.local` only; `.gitignore` verification; no production config change yet.
+- **Implementation approach:**
+  - [ ] Copy `.env.local.example` → `.env.local`.
+  - [ ] Fill local Supabase URL/anon/service-role values.
+  - [ ] Generate a valid 64-hex-character `ENCRYPTION_KEY`.
+  - [ ] Set `NEXT_PUBLIC_SITE_URL=http://localhost:3000` where appropriate for local development.
+  - [ ] For baseline webhook tests, decide how `META_APP_SECRET` will be supplied; do not commit it.
+  - [ ] Set `WHATSAPP_TEMPLATES_DRY_RUN=true` for local UI testing where real Meta submission is unnecessary.
+  - [ ] Record which optional environment variables remain intentionally unset.
+- **Dependencies:** S1.2.
+- **Acceptance criteria:** App receives all mandatory local values; no secrets are tracked by Git.
+- **Testing required:** App startup/config validation.
+- **Status:** `[ ]`
+
+## S1.4 — Install Dependencies and Run Automated Baseline Checks
+
+- **Objective:** Establish current code health before any customization.
+- **Likely files/modules affected:** None intentionally; package lock must not be changed unless installation legitimately requires it and the reason is documented.
+- **Implementation approach:**
+  - [ ] Install exact repository dependencies using the lockfile-preferred command.
+  - [ ] Run `npm run lint`.
+  - [ ] Run `npm run typecheck`.
+  - [ ] Run `npm test`.
+  - [ ] Run `npm run build`.
+  - [ ] Record every warning/failure under **Baseline Issues Found** with command and reproduction notes.
+- **Dependencies:** S1.3.
+- **Acceptance criteria:** Every baseline command has a recorded result; failures are classified as pre-existing vs environment/setup issues.
+- **Testing required:** Full current automated suite + production build.
+- **Status:** `[ ]`
+
+## S1.5 — Run and Manually Verify Existing Application
+
+- **Objective:** Confirm the current app's major screens/routes work before redesign.
+- **Likely files/modules affected:** None.
+- **Implementation approach:**
+  - [ ] Start `npm run dev`.
+  - [ ] Create/use local test user.
+  - [ ] Verify signup/login/password-reset behavior available in local environment.
+  - [ ] Verify dashboard.
+  - [ ] Verify inbox shell and empty states.
+  - [ ] Verify contacts and contact detail/edit flows.
+  - [ ] Verify pipelines/deals.
+  - [ ] Verify broadcasts/campaign UI.
+  - [ ] Verify automations/flows editors open.
+  - [ ] Verify AI/settings screens open without provider credentials.
+  - [ ] Verify team/settings/API key/webhook screens as applicable.
+  - [ ] Verify mobile drawer/basic responsive behavior at representative breakpoints.
+  - [ ] Capture baseline screenshots for comparison.
+- **Dependencies:** S1.4.
+- **Acceptance criteria:** Major existing areas are manually classified working / partially working / blocked by external credentials.
+- **Testing required:** Desktop + mobile smoke test.
+- **Status:** `[ ]`
+
+## S1.6 — Meta/WhatsApp Local Test Setup
+
+- **Objective:** Prepare the safest minimal path for real webhook/inbound/outbound validation without changing WhatsApp core code.
+- **Likely files/modules affected:** Local env/settings only.
+- **Implementation approach:**
+  - [ ] Confirm test Meta app/WABA/phone-number credentials are available.
+  - [ ] Configure HTTPS tunnel (Cloudflare Tunnel or ngrok; choose one and document it).
+  - [ ] Point Meta callback to `/api/whatsapp/webhook`.
+  - [ ] Configure/verify webhook verify token and Meta app secret.
+  - [ ] Confirm code's current Meta Graph API version and record it as a compatibility dependency; do not upgrade blindly.
+  - [ ] Send a minimal test only after baseline app works.
+- **Dependencies:** Working local app; Meta credentials; tunnel.
+- **Acceptance criteria:** Webhook verification succeeds or any external-account blocker is clearly documented.
+- **Testing required:** Verification handshake; inbound/outbound smoke test if credentials permit.
+- **Status:** `[ ]`
+
+### Stage 1 Exit Criteria
+
+- [ ] Local Supabase stack runs.
+- [ ] Migrations `001`–`039` replay cleanly or baseline failure is documented.
+- [ ] App starts locally.
+- [ ] Lint/typecheck/tests/build all have recorded baseline results.
+- [ ] Major screens manually reviewed.
+- [ ] WhatsApp test path prepared.
+- [ ] All pre-customization defects are listed under **Baseline Issues Found**.
+
+---
+
+# Stage 2 — Shineovative Product Foundation
+
+**Goal:** Create one configuration-driven product/brand layer before redesigning screens. Client branding later should be configuration, not a new fork.
+
+**Stage status:** `[ ] Not started`
+
+## S2.1 — Audit All Hardcoded Product/Brand Strings and Assets
+
+- **Objective:** Find every user-visible `wacrm`/generic brand dependency before replacing anything.
+- **Likely files/modules affected:** `src/app/layout.tsx`, `src/app/icon.tsx`, `src/components/layout/*`, auth pages, `messages/*`, public assets, metadata-related files.
+- **Implementation approach:**
+  - [ ] Search codebase for `wacrm`, upstream URLs, current icon/brand strings, metadata titles, support links.
+  - [ ] Separate user-facing branding from backend/internal identifiers that should remain unchanged.
+  - [ ] Produce a short replacement matrix in **Decisions Made** or **Changes Implemented**.
+- **Dependencies:** Stage 1 baseline complete.
+- **Acceptance criteria:** No major user-visible branding location is missed; no unnecessary database/API rename is proposed.
+- **Testing required:** Search-based verification.
+- **Status:** `[ ]`
+
+## S2.2 — Central Brand/Product Configuration
+
+- **Objective:** Make brand identity switchable in one place.
+- **Likely files/modules affected:** proposed `src/config/brand.ts`, `src/config/product.ts` (or one clearly scoped config module), `src/app/layout.tsx`, theme/token utilities.
+- **Implementation approach:**
+  - [ ] Define product/company display names.
+  - [ ] Define logo/icon asset references and alt text.
+  - [ ] Define public website/support/contact references.
+  - [ ] Define metadata title template/description.
+  - [ ] Define navigation display labels or a clean mapping layer that works with `next-intl`.
+  - [ ] Define deployment feature flags needed for internal/client variants.
+  - [ ] Define default CRM configuration references without hardcoding customer data into UI components.
+  - [ ] Keep secrets and environment-specific IDs outside this config.
+- **Dependencies:** D-001/D-002; S2.1.
+- **Acceptance criteria:** A future client brand can be changed through configuration/assets/environment rather than editing dozens of components.
+- **Testing required:** Typecheck; metadata/UI smoke test after implementation.
+- **Status:** `[ ]`
+
+## S2.3 — Brand Design Tokens and Typography Architecture
+
+- **Objective:** Translate verified Shineovative values into reusable application tokens.
+- **Likely files/modules affected:** `src/app/globals.css`, `src/lib/themes.ts`, root layout/font loading, shared UI primitives only where necessary.
+- **Implementation approach:**
+  - [ ] First complete exact website DOM/CSS verification described in **Shineovative Brand/UI Reference**.
+  - [ ] Preserve semantic token names (`background`, `card`, `primary`, `muted`, `border`, etc.) rather than hardcoding colors inside pages.
+  - [ ] Define branded light/dark surfaces.
+  - [ ] Define brand accent/hover/soft/ring/chart/sidebar tokens.
+  - [ ] Define typography tokens from the verified font family and hierarchy.
+  - [ ] Define consistent radius/shadow/spacing tokens appropriate for an operational CRM.
+  - [ ] Decide whether legacy accent choices remain available internally or are hidden behind deployment configuration.
+- **Dependencies:** D-003; exact live-site style verification.
+- **Acceptance criteria:** Components can consume semantic tokens; Shineovative visual identity is not duplicated as arbitrary class strings across pages.
+- **Testing required:** Visual smoke test light/dark; accessibility contrast check.
+- **Status:** `[ ]`
+
+## S2.4 — Feature Flags / Deployment Behavior
+
+- **Objective:** Make internal vs future client deployments configurable without forks.
+- **Likely files/modules affected:** new config module, auth/signup routing/visibility, navigation builders, feature entry points.
+- **Implementation approach:**
+  - [ ] Define minimal flags only for real needs (example: public signup enabled, AI enabled, flows shown, API/MCP shown, accent/theme selector shown).
+  - [ ] Avoid building a generic remote feature-flag platform.
+  - [ ] Default Shineovative internal deployment to approved behavior.
+  - [ ] Ensure a disabled navigation feature is not exposed through obvious UI entry points; authorization/security must still rely on backend controls where applicable.
+- **Dependencies:** D-004 and navigation decisions.
+- **Acceptance criteria:** Internal/client-facing variations do not require copy-pasted codebases.
+- **Testing required:** Flag-on/flag-off routing/UI checks for flags actually introduced.
+- **Status:** `[ ]`
+
+### Stage 2 Exit Criteria
+
+- [ ] Branding/product config is centralized.
+- [ ] Exact approved logo/favicon assets are in place.
+- [ ] Semantic design tokens contain verified Shineovative values.
+- [ ] Typography system is verified and centralized.
+- [ ] Internal/client behavioral flags are minimal and documented.
+- [ ] No protected backend functionality was rewritten for branding.
+
+---
+
+# Stage 3 — Complete Shineovative UI/UX Redesign
+
+**Goal:** Make the application feel purpose-built by Shineovative while preserving proven CRM/WhatsApp behavior.
+
+**Stage status:** `[ ] Not started`
+
+## UX Principles for All Stage 3 Work
+
+- WhatsApp inbox is the primary operating workspace.
+- Optimize for speed, clarity, scanability, and next actions—not visual novelty.
+- Preserve keyboard/focus/accessibility behavior from existing components.
+- Reuse stable component primitives where practical; restyle/recompose before replacing.
+- Keep dense operational screens calmer than the marketing website.
+- Every redesigned screen must have loading, empty, error, permission, and responsive states considered.
+- Cosmetic terminology changes must not trigger backend table/route renames.
+
+## S3.1 — Global Design System
+
+- **Objective:** Establish the complete branded component language before page-by-page redesign.
+- **Likely files/modules affected:** `src/app/globals.css`, `src/components/ui/*`, shared utility/theme modules, brand config.
+- **Implementation approach:**
+  - [ ] Finalize brand reference with exact source values.
+  - [ ] Define typography hierarchy (display/page title/section title/body/label/helper/metric).
+  - [ ] Define button variants, inputs, selects, dialogs, dropdowns, tabs, badges, cards, tables, tooltips, skeletons, toasts.
+  - [ ] Define density rules for desktop CRM vs mobile.
+  - [ ] Define consistent focus/hover/active/disabled/error states.
+  - [ ] Define chart palette based on semantic brand/supporting colors.
+- **Dependencies:** Stage 2 complete.
+- **Acceptance criteria:** Main shared primitives visually belong to the same system and meet basic contrast/focus requirements.
+- **Testing required:** Component-level visual review in light/dark and representative states.
+- **Status:** `[ ]`
+
+## S3.2 — Login / Authentication Screens
+
+- **Objective:** Make the first impression unmistakably Shineovative while keeping Supabase auth logic intact.
+- **Likely files/modules affected:** `src/app/(auth)/layout.tsx`, login/signup/forgot-password pages, auth presentation components.
+- **Implementation approach:**
+  - [ ] Apply logo/product identity.
+  - [ ] Create professional login composition with concise product positioning.
+  - [ ] Apply approved invite-only/public signup behavior.
+  - [ ] Redesign forgot-password/reset-related presentation without changing auth semantics.
+  - [ ] Ensure mobile keyboard/form usability.
+- **Dependencies:** S3.1; D-004.
+- **Acceptance criteria:** Auth flows still work exactly as baseline; no upstream auth/RLS rewrite.
+- **Testing required:** Login/logout/signup-if-enabled/password reset/invite flow smoke tests.
+- **Status:** `[ ]`
+
+## S3.3 — Main Application Shell
+
+- **Objective:** Build a polished, stable page frame for all CRM areas.
+- **Likely files/modules affected:** `src/app/(dashboard)/layout.tsx`, `dashboard-shell.tsx`, `src/components/layout/*`.
+- **Implementation approach:**
+  - [ ] Redesign content width/padding/responsive breakpoints.
+  - [ ] Define desktop vs mobile shell behavior.
+  - [ ] Preserve realtime/account alerts and required provider context.
+  - [ ] Ensure no layout jump/sidebar overlay regressions.
+- **Dependencies:** S3.1.
+- **Acceptance criteria:** Shell works across all main routes at desktop/tablet/mobile widths.
+- **Testing required:** Route navigation + responsive smoke test.
+- **Status:** `[ ]`
+
+## S3.4 — Sidebar / Navigation
+
+- **Objective:** Simplify IA and use approved product terminology.
+- **Likely files/modules affected:** `src/components/layout/sidebar.tsx`, `messages/*`, brand/navigation config.
+- **Implementation approach:**
+  - [ ] Apply Shineovative logo/mark treatment.
+  - [ ] Implement approved label changes (`Deals`, `Campaigns`, `AI Assistant`).
+  - [ ] Evaluate grouped `Automation` section for Automations + Flows while preserving routes.
+  - [ ] Preserve unread/notification indicators.
+  - [ ] Keep role/account affordances clear.
+  - [ ] Ensure feature flags can hide non-applicable modules cleanly.
+- **Dependencies:** D-005; S3.3.
+- **Acceptance criteria:** A salesperson can understand primary sections immediately; mobile drawer remains accessible.
+- **Testing required:** Active states, unread badges, role/account strip, mobile open/close/Escape/navigation.
+- **Status:** `[ ]`
+
+## S3.5 — Header / Topbar
+
+- **Objective:** Make page context and common actions clear without duplicating sidebar information.
+- **Likely files/modules affected:** `src/components/layout/header.tsx`, page title mapping/translations.
+- **Implementation approach:**
+  - [ ] Update page titles/terminology.
+  - [ ] Refine user/account menu.
+  - [ ] Keep mode switch only if approved.
+  - [ ] Reserve space for page-specific actions only where useful.
+- **Dependencies:** S3.4.
+- **Acceptance criteria:** Header is compact, consistent, responsive, and correctly identifies every redesigned route.
+- **Testing required:** Navigation/title mapping and account menu interactions.
+- **Status:** `[ ]`
+
+## S3.6 — Dashboard
+
+- **Objective:** Turn dashboard into a useful daily operating summary rather than a generic analytics screen.
+- **Likely files/modules affected:** `src/app/(dashboard)/dashboard/page.tsx`, `src/components/dashboard/*`, `src/lib/dashboard/*`.
+- **Implementation approach:**
+  - [ ] Prioritize actionable KPIs: unread conversations, response time, follow-ups due (after Stage 4), open deals/value, campaign activity where data exists.
+  - [ ] Translate public Shineovative “live dashboard / measurable outcomes” language into compact operational cards.
+  - [ ] Retain existing metrics that are trustworthy; do not invent metrics unsupported by current data.
+  - [ ] Improve quick actions and activity feed hierarchy.
+- **Dependencies:** S3.1–S3.5; Stage 4 may later add follow-up card.
+- **Acceptance criteria:** Dashboard helps a user decide what to do next within seconds.
+- **Testing required:** Empty/data/loading states; chart responsiveness.
+- **Status:** `[ ]`
+
+## S3.7 — WhatsApp Inbox
+
+- **Objective:** Make inbox the best and fastest daily workspace in the product without destabilizing message handling.
+- **Likely files/modules affected:** `src/app/(dashboard)/inbox/page.tsx`, `src/components/inbox/*`, safe UI-facing hooks/lib selectors only as needed.
+- **Implementation approach:**
+  - [ ] Improve three-pane hierarchy/list density/active conversation state.
+  - [ ] Preserve message types/media/replies/reactions/status indicators.
+  - [ ] Improve composer, templates, quick replies, AI helper affordances.
+  - [ ] Make contact/deal/action context easy to reach.
+  - [ ] Reserve clean UX locations for Stage 4 Follow-up and Create Deal actions.
+  - [ ] Handle narrow screens with a deliberate drill-in pattern rather than squeezed panes.
+- **Dependencies:** S3.1–S3.5.
+- **Acceptance criteria:** Existing message behaviors remain intact; daily tasks need fewer clicks; responsive behavior is coherent.
+- **Testing required:** Manual inbox/media/reply/reaction/composer checks; mobile layout.
+- **Status:** `[ ]`
+
+## S3.8 — Contacts
+
+- **Objective:** Make contact browsing/detail/editing CRM-efficient.
+- **Likely files/modules affected:** contacts page and `src/components/contacts/*`.
+- **Implementation approach:**
+  - [ ] Improve list/table hierarchy and search/filter clarity.
+  - [ ] Surface phone, company, tags, recent conversation/deal context appropriately.
+  - [ ] Keep import/edit/custom-field functionality intact.
+- **Dependencies:** S3.1.
+- **Acceptance criteria:** Contact create/edit/import/detail behavior remains functional and clearer.
+- **Testing required:** CRUD, search/filter, CSV import smoke test.
+- **Status:** `[ ]`
+
+## S3.9 — Deals / Pipelines
+
+- **Objective:** Present sales work as a clear Deals workspace while keeping pipeline backend semantics.
+- **Likely files/modules affected:** pipelines route, `src/components/pipelines/*`, translations/navigation labels.
+- **Implementation approach:**
+  - [ ] Use **Deals** as approved user-facing label while preserving `/pipelines`, `pipelines`, `pipeline_stages`, `deals` identifiers unless a real reason emerges.
+  - [ ] Improve board readability, value/stage/assignee/contact context.
+  - [ ] Preserve drag/drop and pipeline settings.
+  - [ ] Prepare consistent modal/form behavior for Stage 4 Conversation → Deal action.
+- **Dependencies:** D-005.
+- **Acceptance criteria:** Existing deal CRUD/drag/status/value behavior remains intact.
+- **Testing required:** Create/edit/move/won/lost/pipeline settings.
+- **Status:** `[ ]`
+
+## S3.10 — Campaigns / Broadcasts
+
+- **Objective:** Make broadcast workflows understandable as WhatsApp campaigns without changing reliable sending logic.
+- **Likely files/modules affected:** broadcasts routes/components, translation/display labels only where possible.
+- **Implementation approach:**
+  - [ ] Rename visible product terminology to **Campaigns** if approved.
+  - [ ] Improve campaign status/progress/results presentation.
+  - [ ] Preserve recipient state, retry/resume behavior and Meta template constraints.
+  - [ ] Make destructive/high-volume actions clearly confirmable.
+- **Dependencies:** D-005.
+- **Acceptance criteria:** No regression in broadcast creation, scheduling/sending/resume/retry UI behavior.
+- **Testing required:** Dry-run template/campaign flow + reliability regression in Stage 5.
+- **Status:** `[ ]`
+
+## S3.11 — Automations / Flows
+
+- **Objective:** Simplify discovery/navigation while preserving both existing engines.
+- **Likely files/modules affected:** automations/flows pages/components, navigation.
+- **Implementation approach:**
+  - [ ] Decide grouped navigation presentation without merging backend engines.
+  - [ ] Restyle builders/forms/toolbars consistently.
+  - [ ] Preserve node/flow editor interactions, wait steps, validation, save/publish states.
+- **Dependencies:** D-005.
+- **Acceptance criteria:** No functional loss in either builder; users can understand the difference between automation rules and conversational flows.
+- **Testing required:** Create/edit/save/execute representative automation and flow.
+- **Status:** `[ ]`
+
+## S3.12 — AI Assistant
+
+- **Objective:** Present AI as an integrated CRM helper rather than a separate experimental product.
+- **Likely files/modules affected:** agents page/components, inbox AI banner/helper, AI settings, translations.
+- **Implementation approach:**
+  - [ ] Apply **AI Assistant** terminology if approved.
+  - [ ] Clarify provider/key setup and human handoff state.
+  - [ ] Make knowledge sources/assistant state easy to understand.
+  - [ ] Preserve encrypted BYO-key storage and provider logic.
+- **Dependencies:** D-005.
+- **Acceptance criteria:** AI setup/draft/auto-reply/handoff behavior remains functionally equivalent or better.
+- **Testing required:** No-key state, provider configuration, draft, auto-reply/handoff using safe test credentials where available.
+- **Status:** `[ ]`
+
+## S3.13 — Team / Settings
+
+- **Objective:** Make account setup/admin understandable without weakening permissions.
+- **Likely files/modules affected:** settings page/components, account/member settings, WhatsApp settings, AI/API/webhook settings.
+- **Implementation approach:**
+  - [ ] Reorganize settings sections for task clarity.
+  - [ ] Keep owner/admin/agent/viewer restrictions explicit.
+  - [ ] Keep sensitive credentials masked and secure.
+  - [ ] Apply support/company metadata from brand config where appropriate.
+- **Dependencies:** Stage 2.
+- **Acceptance criteria:** Permission-sensitive actions remain restricted; configuration is easier to navigate.
+- **Testing required:** Role matrix smoke test; credential setting flows.
+- **Status:** `[ ]`
+
+## S3.14 — Empty / Loading / Error / Permission States
+
+- **Objective:** Make non-happy-path UI feel deliberate and branded.
+- **Likely files/modules affected:** shared empty states/skeletons/error boundaries and feature-specific states.
+- **Implementation approach:**
+  - [ ] Inventory existing states.
+  - [ ] Standardize useful next actions and concise copy.
+  - [ ] Avoid decorative empties that hide setup requirements.
+  - [ ] Preserve actionable technical errors for admins where appropriate.
+- **Dependencies:** Major screens redesigned.
+- **Acceptance criteria:** Every primary area has coherent empty/loading/error handling.
+- **Testing required:** Simulated empty/error/loading states.
+- **Status:** `[ ]`
+
+## S3.15 — Mobile / Responsive Refinement
+
+- **Objective:** Ensure the CRM is genuinely usable on phones/tablets, especially inbox and deal actions.
+- **Likely files/modules affected:** all redesigned layouts; no separate mobile codebase.
+- **Implementation approach:**
+  - [ ] Test at representative phone/tablet/desktop widths.
+  - [ ] Verify 44px-ish touch targets for critical controls.
+  - [ ] Ensure inbox uses intentional list→thread→details navigation on narrow screens.
+  - [ ] Avoid horizontal overflow in tables/boards; use deliberate alternatives.
+  - [ ] Test dialogs, drawers, forms, keyboards, long text, media.
+- **Dependencies:** S3.2–S3.14.
+- **Acceptance criteria:** Core daily tasks are possible on mobile without broken layouts.
+- **Testing required:** Browser responsive testing + at least one real-device check if available.
+- **Status:** `[ ]`
+
+### Stage 3 Exit Criteria
+
+- [ ] Exact live brand values documented and used.
+- [ ] Auth, shell, navigation, dashboard, inbox, contacts, deals, campaigns, automation, AI, settings redesigned.
+- [ ] User-facing terminology approved and consistent.
+- [ ] Light/dark behavior matches approved decision.
+- [ ] Empty/loading/error states consistent.
+- [ ] Responsive review complete.
+- [ ] No protected backend rewrite introduced for cosmetic reasons.
+
+---
+
+# Stage 4 — Practical CRM Feature Improvements
+
+**Goal:** Add only a few high-value daily CRM actions that improve follow-through and sales workflow.
+
+**Stage status:** `[ ] Not started`
+
+## S4.1 — Follow-up / Snooze / Next Action
+
+- **Objective:** Let a user set one clear next follow-up directly from a WhatsApp conversation and work from due/overdue queues.
+- **Likely files/modules affected:** new migration `040_...` (actual number must be next available at implementation time), `conversations` data access/types, inbox action UI, conversation list/filtering, possibly dashboard metric/query, notifications only if explicitly chosen.
+- **Implementation approach (minimal-first):**
+  - [ ] Confirm no equivalent existing schema/feature was added upstream since this plan.
+  - [ ] Add new schema through a **new migration only**.
+  - [ ] Prefer a simple single-current-next-action model unless runtime study shows a dedicated history table is necessary.
+  - [ ] Candidate fields (finalize after schema review): `follow_up_at`, optional note/context, setter user reference; avoid unnecessary workflow engine duplication.
+  - [ ] Presets: Later today, Tomorrow, Next week, Custom date/time.
+  - [ ] Add clear complete/clear/reschedule behavior.
+  - [ ] Add filters/views: Follow-ups Due Today, Overdue Follow-ups / Needs Follow-up.
+  - [ ] Respect account isolation and role access using the same RLS/account patterns as existing conversation fields.
+  - [ ] Decide whether due follow-ups generate app notifications; document recommendation before expanding scope.
+- **Dependencies:** Stage 3 inbox foundation; new migration; date/timezone handling.
+- **Acceptance criteria:** Follow-up persists across refresh/session; due/overdue classification is correct in user/account timezone assumptions; unauthorized accounts cannot read/change it; clearing/rescheduling works.
+- **Testing required:** migration test/replay; unit/query tests; timezone boundary cases; UI preset/custom date flow; refresh/realtime behavior.
+- **Status:** `[ ]`
+
+## S4.2 — Conversation → Deal
+
+- **Objective:** Convert a promising WhatsApp conversation into a CRM deal in one intentional action.
+- **Likely files/modules affected:** inbox conversation actions/contact sidebar, existing deal form/components/lib, pipeline selectors/types; likely **no relationship migration required** because `deals.conversation_id` already exists.
+- **Implementation approach:**
+  - [ ] Reuse existing `deal-form`/deal create logic rather than create a second deal implementation.
+  - [ ] Add **Create Deal** from conversation context.
+  - [ ] Pre-fill contact ID/name/company from conversation contact.
+  - [ ] Pre-fill `conversation_id`.
+  - [ ] Require/default a pipeline and stage using existing account defaults/current pipelines.
+  - [ ] Allow expected value/currency/title/assignee where current deal model supports them.
+  - [ ] After creation, surface linked/open deal context in the conversation UI.
+  - [ ] If multiple deals per conversation are allowed by current schema, do not introduce an artificial uniqueness constraint unless explicitly approved.
+- **Dependencies:** Existing deal CRUD and pipeline data working; Stage 3 inbox/deals UI.
+- **Acceptance criteria:** Deal is created with correct contact/conversation relationship and appears in Deals board; linked context survives refresh.
+- **Testing required:** create from conversation, missing pipeline/stage, permissions, existing-deal scenario, refresh/navigation.
+- **Status:** `[ ]`
+
+## S4.3 — Better CRM Inbox Views
+
+- **Objective:** Turn inbox filters into real daily work queues.
+- **Likely files/modules affected:** conversation list/filter UI, `src/lib/inbox/conversations.ts`, hooks/query parameters/types; possibly persisted preference only if clearly useful.
+- **Required views:**
+  - [ ] My Conversations
+  - [ ] Unassigned
+  - [ ] Unread
+  - [ ] Needs Follow-up
+  - [ ] Follow-up Overdue
+  - [ ] Hot Leads
+  - [ ] Open Deals
+  - [ ] Waiting for Customer
+- **Implementation approach:**
+  - [ ] First define the **data rule** for each view; do not ship labels with ambiguous logic.
+  - [ ] Reuse existing assignment/unread/status/deal/tag data where possible.
+  - [ ] For “Hot Leads,” prefer an explicit approved tag/status rule over invented AI scoring unless a real scoring system exists.
+  - [ ] For “Waiting for Customer,” derive from existing conversation status/message direction only if reliable; otherwise document the missing state and choose a clear minimal rule.
+  - [ ] Keep filters fast with indexed/queryable fields where applicable.
+  - [ ] Make active view/count obvious and usable on mobile.
+- **Dependencies:** S4.1 for follow-up views; existing conversation/deal data.
+- **Acceptance criteria:** Every view has documented deterministic inclusion rules and returns the expected conversations.
+- **Testing required:** query/filter unit tests; combinations; empty states; role/account isolation.
+- **Status:** `[ ]`
+
+## S4.4 — Additional Small Improvements Discovered During Use
+
+- **Objective:** Capture high-value observations without uncontrolled scope growth.
+- **Implementation approach:**
+  - [ ] During Stages 1–4, record no more than 1–2 strong additional recommendations under **Future Ideas — Not Current Scope**.
+  - [ ] Do **not** implement them automatically.
+  - [ ] Require owner approval before moving them into current scope.
+- **Dependencies:** Real usage/testing evidence.
+- **Acceptance criteria:** Scope remains focused on the three approved features.
+- **Testing required:** N/A unless approved later.
+- **Status:** `[ ]`
+
+### Stage 4 Exit Criteria
+
+- [ ] Follow-up/snooze works and due queues are useful.
+- [ ] Conversation → Deal uses existing relationship cleanly.
+- [ ] Inbox views have deterministic definitions and tests.
+- [ ] No speculative feature creep was introduced.
+
+---
+
+# Stage 5 — WhatsApp + Core Regression Testing
+
+**Goal:** Prove redesign/feature work did not damage the mature upstream WhatsApp/CRM behaviors.
+
+**Stage status:** `[ ] Not started`
+
+## S5.1 — Automated Regression Gate
+
+- **Objective:** Run all existing + newly added automated checks before deep manual testing.
+- **Likely files/modules affected:** tests only when a legitimate gap is identified.
+- **Implementation approach:**
+  - [ ] Fresh migration replay.
+  - [ ] Lint.
+  - [ ] Typecheck.
+  - [ ] Full test suite.
+  - [ ] Production build.
+  - [ ] Compare against Stage 1 baseline.
+- **Dependencies:** Stages 2–4 complete.
+- **Acceptance criteria:** No unexplained new failures; intentional changed tests documented.
+- **Testing required:** Full automated gate.
+- **Status:** `[ ]`
+
+## S5.2 — WhatsApp Messaging Regression Matrix
+
+- **Objective:** Verify real message lifecycle after UI/data changes.
+- **Test matrix:**
+  - [ ] Inbound text.
+  - [ ] Outbound text.
+  - [ ] Images.
+  - [ ] Documents/files.
+  - [ ] Audio/voice where supported.
+  - [ ] Video where supported.
+  - [ ] Replies/quoted messages.
+  - [ ] Reactions.
+  - [ ] Sent/delivered/read/failed statuses.
+  - [ ] Conversation unread counters.
+  - [ ] Assignment/status changes.
+  - [ ] Inbound media remains available after mirroring path.
+- **Protected code:** Do not “simplify” webhook/media/send code while fixing UI regressions.
+- **Acceptance criteria:** Core matrix passes or external Meta limitations are explicitly documented.
+- **Status:** `[ ]`
+
+## S5.3 — Templates / Campaigns / Broadcast Reliability
+
+- **Objective:** Ensure branding work does not break high-risk bulk/template flows.
+- **Test matrix:**
+  - [ ] Template list/sync/status UI.
+  - [ ] Template send from conversation where supported.
+  - [ ] Campaign create/audience/preview.
+  - [ ] Start/send.
+  - [ ] Close browser/reopen during resumable scenario where safely testable.
+  - [ ] Retry failed recipients.
+  - [ ] Progress/count/status updates.
+  - [ ] No duplicate send caused by our changes.
+- **Acceptance criteria:** Existing reliability behavior from migrations `037–039` remains intact.
+- **Status:** `[ ]`
+
+## S5.4 — Automations / Flows / AI
+
+- **Objective:** Verify secondary systems after navigation/UI changes.
+- **Test matrix:**
+  - [ ] Automation create/edit/enable.
+  - [ ] Representative trigger/action.
+  - [ ] Wait/cron behavior if configured.
+  - [ ] Flow create/edit/save/publish/execute path where available.
+  - [ ] AI no-key state.
+  - [ ] AI draft reply.
+  - [ ] Auto-reply/handoff behavior with controlled credentials.
+  - [ ] Knowledge source/search behavior.
+- **Acceptance criteria:** No regression caused by terminology/grouping/restyling.
+- **Status:** `[ ]`
+
+## S5.5 — CRM / Team / Security Behavior
+
+- **Objective:** Verify core business data and permissions.
+- **Test matrix:**
+  - [ ] Contacts CRUD/import/tags/custom fields/notes.
+  - [ ] Deals create/edit/move/status/value/assignment.
+  - [ ] Conversation → Deal.
+  - [ ] Follow-up set/reschedule/clear/due/overdue.
+  - [ ] Team invite/join/remove/change-role as permitted.
+  - [ ] Owner/admin/agent/viewer access matrix.
+  - [ ] Account isolation check using at least two test accounts if practical.
+  - [ ] API keys/webhook settings.
+  - [ ] Webhook signing behavior.
+- **Acceptance criteria:** No cross-account leak; permissions match intended upstream rules.
+- **Status:** `[ ]`
+
+## S5.6 — Realtime / Refresh / Network Recovery / Responsive QA
+
+- **Objective:** Test conditions that often break CRMs even when happy-path clicks work.
+- **Test matrix:**
+  - [ ] New message appears realtime.
+  - [ ] Unread count updates.
+  - [ ] Refresh current conversation.
+  - [ ] Browser reconnect after temporary network loss where feasible.
+  - [ ] Refresh during/after deal/follow-up changes.
+  - [ ] Mobile inbox navigation.
+  - [ ] Mobile forms/dialogs/menus.
+  - [ ] Tablet/desktop layouts.
+- **Acceptance criteria:** No stale or unusable primary state after normal refresh/reconnect scenarios.
+- **Status:** `[ ]`
+
+## S5.7 — Fix → Retest → Regression Closeout
+
+- **Objective:** Resolve discovered regressions without hiding known defects.
+- **Implementation approach:**
+  - [ ] Log each bug under **Known Issues / Technical Debt** or a tracked issue reference.
+  - [ ] Fix smallest root cause.
+  - [ ] Add regression test when reasonable.
+  - [ ] Rerun relevant focused tests.
+  - [ ] Rerun full automated gate before Stage 5 closes.
+- **Acceptance criteria:** No release-blocking regression remains undocumented.
+- **Status:** `[ ]`
+
+### Stage 5 Exit Criteria
+
+- [ ] Full automated gate passes or approved baseline exception is documented.
+- [ ] WhatsApp core matrix completed.
+- [ ] Campaign reliability checked.
+- [ ] Automations/flows/AI checked.
+- [ ] CRM/team/security checked.
+- [ ] Realtime/refresh/mobile checked.
+- [ ] All release blockers fixed/retested.
+
+---
+
+# Stage 6 — Shineovative Internal Release
+
+**Goal:** Produce a stable, practical internal instance for daily Shineovative usage.
+
+**Stage status:** `[ ] Not started`
+
+## S6.1 — Production Environment Checklist
+
+- **Objective:** Define and verify every required production configuration before deployment.
+- **Likely areas:** hosting environment, Supabase production project, Meta app/WABA, environment secrets, domain/DNS, cron if automations use waits.
+- **Checklist:**
+  - [ ] Production Supabase project and region selected.
+  - [ ] Fresh migrations applied in order.
+  - [ ] Strong production `ENCRYPTION_KEY` stored securely and backed up operationally.
+  - [ ] Supabase service-role key server-only.
+  - [ ] Meta app secret/server-only credentials configured.
+  - [ ] Canonical `NEXT_PUBLIC_SITE_URL`.
+  - [ ] `ALLOWED_INVITE_HOSTS` if needed.
+  - [ ] Automation cron secret/scheduler if Wait steps are used.
+  - [ ] HTTPS/domain configured.
+  - [ ] Logging/error-monitoring decision documented.
+- **Acceptance criteria:** No development/dry-run secrets/config accidentally used in production.
+- **Status:** `[ ]`
+
+## S6.2 — Internal Admin / Team Setup
+
+- **Objective:** Initialize actual Shineovative users safely.
+- **Checklist:**
+  - [ ] Create/verify owner/admin account.
+  - [ ] Apply approved public-signup/invite-only behavior.
+  - [ ] Invite team members with minimum required roles.
+  - [ ] Verify role behavior once more in production.
+- **Acceptance criteria:** Team can sign in and access only intended capabilities.
+- **Status:** `[ ]`
+
+## S6.3 — Shineovative CRM Defaults
+
+- **Objective:** Make the internal system useful immediately after login.
+- **Checklist:**
+  - [ ] Approved default pipeline/stages.
+  - [ ] Useful default tags.
+  - [ ] Quick replies.
+  - [ ] Account/company profile.
+  - [ ] AI business context/knowledge sources.
+  - [ ] WhatsApp templates required for real operation.
+  - [ ] Default ownership/assignment operating convention documented.
+- **Dependencies:** D-007 and real business workflow input.
+- **Acceptance criteria:** Team does not need to configure basic operating structure from scratch.
+- **Status:** `[ ]`
+
+## S6.4 — Backup / Recovery / Operational Notes
+
+- **Objective:** Make the internal release maintainable rather than merely deployed.
+- **Checklist:**
+  - [ ] Document Supabase backup/restore approach appropriate to selected plan.
+  - [ ] Record encryption-key recovery importance; losing/rotating key can orphan encrypted credentials.
+  - [ ] Record how to reconnect WhatsApp credentials after key rotation if ever needed.
+  - [ ] Record deployment/update/rollback procedure.
+  - [ ] Record known limitations.
+- **Acceptance criteria:** Another technical operator can understand how to recover/update the instance.
+- **Status:** `[ ]`
+
+## S6.5 — Internal Go-Live Smoke Test
+
+- **Objective:** Validate the actual deployed system, not only localhost.
+- **Checklist:**
+  - [ ] Login/invite.
+  - [ ] Inbound/outbound WhatsApp.
+  - [ ] Media.
+  - [ ] Follow-up.
+  - [ ] Conversation → Deal.
+  - [ ] Inbox views.
+  - [ ] Template/campaign smoke test.
+  - [ ] AI assistant if enabled.
+  - [ ] Mobile browser test.
+- **Acceptance criteria:** Shineovative can begin real internal usage.
+- **Status:** `[ ]`
+
+### Stage 6 Exit Criteria
+
+- [ ] Production checklist complete.
+- [ ] Team/accounts configured.
+- [ ] CRM defaults approved and loaded.
+- [ ] Backup/recovery/update notes documented.
+- [ ] Internal production smoke test passes.
+- [ ] Known limitations published in this file.
+
+---
+
+# Stage 7 — Client-Ready Productization
+
+**Goal:** Make client-specific branded deployments repeatable without duplicating the application or overbuilding a multi-tenant SaaS platform prematurely.
+
+**Stage status:** `[ ] Not started`
+
+## Target Structure
+
+```text
+Original upstream (ArnasDon/wacrm)
+          ↓ periodic reviewed merges
+Shineovative CRM Core
+          ↓ configuration + environment + deployment
+ ┌────────┼────────┐
+Shineovative   Client A   Client B
+ internal
+```
+
+## S7.1 — Upstream Git Strategy
+
+- **Objective:** Keep the fork maintainable as upstream evolves.
+- **Implementation approach:**
+  - [ ] Keep `origin` as Shineovative-controlled repository.
+  - [ ] Add original project as `upstream` remote.
+  - [ ] Record baseline upstream commit/tag used for the customization.
+  - [ ] Periodically fetch upstream into a dedicated update branch.
+  - [ ] Review changelog/migrations/security/reliability changes before merge.
+  - [ ] Merge/rebase using the team's chosen consistent policy; do not blindly overwrite custom UI/config.
+  - [ ] Run fresh migration replay + full regression gate after every upstream integration.
+  - [ ] Keep upstream-license obligations intact.
+- **Acceptance criteria:** Upstream changes can be reviewed/merged without copying code manually between client repos.
+- **Status:** `[ ]`
+
+## S7.2 — Client Branding Configuration
+
+- **Objective:** Brand a deployment without a client-specific fork.
+- **Common configurable items:**
+  - [ ] Product/company name.
+  - [ ] Logos/favicon.
+  - [ ] Semantic theme tokens/accent.
+  - [ ] Support/contact links.
+  - [ ] Metadata.
+  - [ ] Navigation labels where needed.
+  - [ ] Approved feature flags.
+  - [ ] Default pipeline/tags/quick replies/AI context templates.
+- **Acceptance criteria:** Client A branding can be created without editing feature/business-logic modules.
+- **Status:** `[ ]`
+
+## S7.3 — Client Environment and Data Isolation
+
+- **Objective:** Keep credentials/data separate per customer deployment.
+- **Recommended initial model:** Separate deployment + separate Supabase project + separate Meta/customer credentials per client unless a later product decision deliberately changes architecture.
+- **Checklist:**
+  - [ ] Separate Supabase URL/keys.
+  - [ ] Separate encryption key.
+  - [ ] Separate Meta app/WABA credentials as required.
+  - [ ] Separate domain/site URL.
+  - [ ] Separate AI provider keys/config.
+  - [ ] Separate webhook/API keys.
+  - [ ] Separate backup/retention ownership.
+- **Acceptance criteria:** No customer deployment shares secrets or database rows by accidental configuration.
+- **Status:** `[ ]`
+
+## S7.4 — Common Core vs Client-Specific Rules
+
+**Must remain common core whenever reasonably possible:**
+
+- WhatsApp integration/reliability layer.
+- Auth/account/role model.
+- Contacts/conversations/messages.
+- Deals/pipelines engine.
+- Campaign engine.
+- Automations/flows engine.
+- AI assistant architecture.
+- Follow-up feature.
+- Conversation → Deal.
+- Inbox view framework.
+- Shared UI components/design-system mechanics.
+- Migration sequence.
+
+**Should be configuration/client-specific:**
+
+- Brand/product identity.
+- Deployment domain.
+- Supabase/Meta/AI credentials.
+- Enabled modules.
+- Default CRM stages/tags/replies.
+- AI business context/knowledge.
+- Support links.
+- Approved theme tokens.
+
+**Requires explicit review before client-specific code is allowed:**
+
+- Unique third-party integrations.
+- Client-only business rules that cannot be represented by existing automation/configuration.
+- Regulatory/data-residency requirements.
+- Major workflow divergence.
+
+- **Acceptance criteria:** Client requests default to configuration first; code fork is last resort.
+- **Status:** `[ ]`
+
+## S7.5 — Repeatable Deployment Checklist
+
+- **Objective:** Turn a tested core build into a predictable client rollout process.
+- **Checklist:**
+  - [ ] Create client config/assets.
+  - [ ] Provision separate Supabase.
+  - [ ] Apply migrations.
+  - [ ] Configure environment secrets.
+  - [ ] Deploy application/domain.
+  - [ ] Connect Meta WhatsApp.
+  - [ ] Configure defaults/users.
+  - [ ] Run client smoke test.
+  - [ ] Record version/upstream commit/custom config.
+- **Acceptance criteria:** Client deployment process is documented and repeatable without copying the entire repo.
+- **Status:** `[ ]`
+
+### Stage 7 Exit Criteria
+
+- [ ] Upstream remote/update workflow documented and tested.
+- [ ] Brand/config separation supports another deployment.
+- [ ] Per-client environment/data separation documented.
+- [ ] Common-core boundary documented.
+- [ ] Repeatable client deployment checklist exists.
+
+---
+
+# Baseline Issues Found
+
+> Populate during Stage 1. Do not silently fix pre-existing failures before recording them here.
+
+| ID | Area | Issue | Severity | Reproduction / evidence | Pre-existing? | Status |
+|---|---|---|---|---|---|---|
+| BASE-001 | Brand research | Exact live Shineovative CSS colors/fonts/radii/shadows/favicon were not exposed by the indexed text crawler used during planning. They must be captured from live DOM/CSS before Stage 3 implementation. | Attention | See **Shineovative Brand/UI Reference** | N/A planning dependency | `[!]` |
+| BASE-002 | Runtime | Local lint/typecheck/tests/build have not yet been run because this planning step was explicitly restricted to research + `IMPLEMENTATION.md`. | Informational | Stage 1 pending | N/A | `[ ]` |
+| BASE-003 | WhatsApp external dependency | Availability of Meta test app/WABA credentials and local HTTPS tunnel has not yet been verified. | Attention | Stage 1 S1.6 | N/A | `[ ]` |
+
+---
+
+# Decisions Made
+
+| ID | Date | Decision | Reason / impact |
+|---|---|---|---|
+| DEC-001 | 2026-08-28 | Preserve mature upstream WhatsApp/Auth/RLS/reliability internals by default. | Fastest path and minimizes regression/upstream merge risk. |
+| DEC-002 | 2026-08-28 | Use configuration-driven branding rather than hardcoding Shineovative strings across screens. | Enables future client deployments from one core. |
+| DEC-003 | 2026-08-28 | Cosmetic terminology changes will not trigger backend table/route renames. | Maintains upstream compatibility and stability. |
+| DEC-004 | 2026-08-28 | New schema changes must use new migrations; historical migrations are immutable. | Protects reproducibility and upstream migration history. |
+| DEC-005 | 2026-08-28 | Conversation → Deal should reuse existing `deals.conversation_id` unless runtime inspection proves another change is required. | Existing schema already models the relationship. |
+| DEC-006 | 2026-08-28 | Unverified brand values will remain explicitly TBD rather than guessed. | User requires exact website identity and source-grounded decisions. |
+| DEC-007 | 2026-08-28 | Git / Repository Strategy: Initialize standalone local Git repo from extracted archive. Do not connect `upstream` or `origin` to wacrm, do not configure GitHub remote yet. Create baseline commit before app code changes. Future private repo as `origin` when stabilized. | Keeps codebase independent, clean history, allows review/reverts locally. |
+
+---
+
+# Changes Implemented
+
+> Append every implementation change with enough detail for a later session to understand what changed and why.
+
+| Date/time | Stage/task | Change | Files/migrations | Verification |
+|---|---|---|---|---|
+| 2026-08-28 09:42 IST | Planning | Created this `IMPLEMENTATION.md` only. No application code changed. | `IMPLEMENTATION.md` | File reviewed for stage/task coverage. |
+
+---
+
+# Testing Results
+
+> Record command, result, failures, and relevant environment. Do not replace old results; append new runs so regressions can be compared over time.
+
+| Date/time | Stage | Test/command | Result | Notes |
+|---|---|---|---|---|
+| 2026-08-28 09:42 IST | Planning | Runtime tests intentionally not executed | Not run | User explicitly requested research/documentation only before approval. Stage 1 will establish baseline. |
+
+---
+
+# Known Issues / Technical Debt
+
+> Include only confirmed issues or intentionally deferred technical work. Do not use this section as a feature wishlist.
+
+- `[!]` Brand DOM/CSS capture still required before exact Stage 3 design tokens can be finalized.
+- `[ ]` Repository package version/changelog/code level should be compared against current upstream during Stage 1/update planning; do not infer release level from `package.json` alone.
+- `[ ]` Current Meta Graph API version used in code should be recorded and compatibility-checked before production; do not upgrade as part of branding work without a dedicated test.
+- `[ ]` MFA/TOTP was not found during prior repository inspection; this is **not current scope** unless internal security review later promotes it.
+
+---
+
+# Future Ideas — Not Current Scope
+
+> Do not implement these without explicit approval. Add only ideas supported by real use/testing.
+
+- Potential MFA/TOTP for higher-security deployments.
+- Potential per-client onboarding wizard once multiple deployments justify it.
+- Potential follow-up notification/reminder escalation beyond the simple next-action feature if internal usage proves it necessary.
+- Potential advanced lead scoring only if Shineovative develops an explicit, evidence-backed scoring model; do not label arbitrary AI scores as “Hot Leads.”
+- Any additional quick CRM improvements discovered during testing must be recommended here first and approved before scope expansion.
+
+---
+
+# Immediate Next Action After Approval
+
+1. Set Progress Summary to Stage 1 / S1.1 `[~]`.
+2. Verify local prerequisites and clean repository state.
+3. Start the fully local Supabase stack and replay migrations.
+4. Configure `.env.local` without committing secrets.
+5. Run lint → typecheck → tests → production build and record every baseline result before changing application code.
+
+**Do not begin Stage 2 or UI redesign until the Stage 1 baseline is recorded.**

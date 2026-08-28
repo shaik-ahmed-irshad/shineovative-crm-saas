@@ -16,6 +16,10 @@ import {
 } from "@/components/ui/card";
 import { MessageSquare, CheckCircle, UsersRound } from "lucide-react";
 
+import { BrandLogo } from "@/components/brand/brand-logo";
+import { BRAND_CONFIG } from "@/config/brand";
+import { isFeatureEnabled } from "@/config/product";
+
 // `useSearchParams` opts the component out of static prerendering
 // unless wrapped in Suspense — same pattern as /login.
 export default function SignupPage() {
@@ -28,11 +32,6 @@ export default function SignupPage() {
 
 function SignupPageInner() {
   const searchParams = useSearchParams();
-  // When the user lands here from `/join/<token>` we carry the
-  // invite token in the query so it survives the signup → email
-  // verification → redirect round-trip. `emailRedirectTo` below
-  // points back at /join/<token> so the user lands on the redeem
-  // step after verifying instead of being dropped on /dashboard.
   const inviteToken = searchParams.get("invite");
 
   const [fullName, setFullName] = useState("");
@@ -43,6 +42,33 @@ function SignupPageInner() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const supabase = createClient();
+
+  const isPublicSignupAllowed = isFeatureEnabled("publicSignup") || !!inviteToken;
+
+  if (!isPublicSignupAllowed) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <Card className="w-full max-w-md border-border bg-card text-center">
+          <CardHeader className="items-center">
+            <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+              <BrandLogo iconOnly />
+            </div>
+            <CardTitle className="text-xl text-foreground">
+              Invitation Required
+            </CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Account registration for {BRAND_CONFIG.name} is by invitation only. Please contact your administrator for access.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild className="w-full">
+              <Link href="/login">Return to Sign In</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();

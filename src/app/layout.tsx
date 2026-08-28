@@ -20,18 +20,20 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
+import { BRAND_CONFIG } from "@/config/brand";
+
 export const metadata: Metadata = {
   title: {
-    default: "wacrm",
-    template: "%s — wacrm",
+    default: BRAND_CONFIG.name,
+    template: `%s — ${BRAND_CONFIG.name}`,
   },
-  description: "Self-hostable CRM template for WhatsApp.",
+  description: BRAND_CONFIG.description,
   robots: {
     index: false,
     follow: false,
   },
   icons: {
-    icon: [{ url: "/icon" }],
+    icon: [{ url: BRAND_CONFIG.favicon }],
   },
   formatDetection: {
     email: false,

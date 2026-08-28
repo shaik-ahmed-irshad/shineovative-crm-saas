@@ -17,6 +17,10 @@ import {
 } from "@/components/ui/card";
 import { MessageSquare, UsersRound } from "lucide-react";
 
+import { BrandLogo } from "@/components/brand/brand-logo";
+import { BRAND_CONFIG } from "@/config/brand";
+import { isFeatureEnabled } from "@/config/product";
+
 // `useSearchParams` opts the component out of static prerendering
 // unless it sits under a Suspense boundary. We split the form into
 // a child component so the outer page can prerender the chrome
@@ -32,9 +36,6 @@ export default function LoginPage() {
 
 function LoginPageInner() {
   const searchParams = useSearchParams();
-  // Forwarded from `/join/<token>` when the visitor already has an
-  // account. After a successful sign-in we send them to the join
-  // page to accept rather than to /dashboard.
   const inviteToken = searchParams.get("invite");
   const t = useTranslations("LoginPage");
 
@@ -43,6 +44,7 @@ function LoginPageInner() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const supabase = createClient();
+  const allowSignup = isFeatureEnabled("publicSignup") || !!inviteToken;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,14 +62,6 @@ function LoginPageInner() {
       return;
     }
 
-    // Full-page navigation (not router.push) so the browser issues a
-    // fresh top-level request that carries the just-written Supabase
-    // auth cookies to the middleware gating /dashboard. A soft
-    // client-side navigation can reach the protected route before the
-    // server observes the new session, so the middleware bounces it
-    // back to /login — which looks like the page "just refreshing"
-    // instead of signing in (issue #365). Mirrors the deliberate full
-    // reload the invite-accept flow already uses in join/[token].
     const destination = inviteToken
       ? `/join/${encodeURIComponent(inviteToken)}`
       : "/dashboard";
@@ -82,11 +76,11 @@ function LoginPageInner() {
             {inviteToken ? (
               <UsersRound className="h-6 w-6 text-primary" />
             ) : (
-              <MessageSquare className="h-6 w-6 text-primary" />
+              <BrandLogo iconOnly />
             )}
           </div>
           <CardTitle className="text-xl text-foreground">
-            {inviteToken ? t('titleAccept') : t('titleWelcome')}
+            {inviteToken ? t('titleAccept') : BRAND_CONFIG.name}
           </CardTitle>
           <CardDescription className="text-muted-foreground">
             {inviteToken
@@ -149,19 +143,21 @@ function LoginPageInner() {
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            {t('noAccount')}{" "}
-            <Link
-              href={
-                inviteToken
-                  ? `/signup?invite=${encodeURIComponent(inviteToken)}`
-                  : "/signup"
-              }
-              className="text-primary hover:text-primary/80"
-            >
-              {t('createAccount')}
-            </Link>
-          </p>
+          {allowSignup && (
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+              {t('noAccount')}{" "}
+              <Link
+                href={
+                  inviteToken
+                    ? `/signup?invite=${encodeURIComponent(inviteToken)}`
+                    : "/signup"
+                }
+                className="text-primary hover:text-primary/80"
+              >
+                {t('createAccount')}
+              </Link>
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>

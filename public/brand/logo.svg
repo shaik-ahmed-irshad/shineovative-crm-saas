@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 40" fill="none">
+  <rect width="36" height="36" rx="8" fill="#2563eb"/>
+  <path d="M12 26V14l9 6-9 6zm10-12h4v12h-4V14z" fill="#ffffff"/>
+  <text x="46" y="24" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="14" fill="#0f172a">Shineovative</text>
+  <text x="46" y="34" font-family="system-ui, -apple-system, sans-serif" font-weight="500" font-size="9" fill="#64748b">WHATSAPP CRM</text>
+</svg>

@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
-import { Inter } from "next/font/google";
+import { Inter, Outfit } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from "@/hooks/use-theme";
@@ -14,8 +14,6 @@ import {
   STORAGE_KEY,
   THEME_IDS,
 } from "@/lib/themes";
-
-import { Inter, Outfit } from "next/font/google";
 
 const inter = Inter({
   variable: "--font-sans",

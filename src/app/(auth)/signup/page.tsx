@@ -61,9 +61,9 @@ function SignupPageInner() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button asChild className="w-full">
-              <Link href="/login">Return to Sign In</Link>
-            </Button>
+            <Link href="/login" className="block w-full">
+              <Button className="w-full">Return to Sign In</Button>
+            </Link>
           </CardContent>
         </Card>
       </div>

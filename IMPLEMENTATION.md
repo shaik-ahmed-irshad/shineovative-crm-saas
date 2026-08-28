@@ -158,71 +158,65 @@ Relevant existing modules include, but are not limited to:
 
 1. Live homepage: `https://shineovative.com/`
 2. Contact page: `https://shineovative.com/contact`
-3. Current indexed homepage logo asset reference surfaced as: `/updated-assets/shinovative-logo.webp`
-4. Service/content pages reviewed for wording and visual/content patterns:
-   - `/services/ecommerce-solutions`
-   - `/services/agentic-development`
-   - `/blog/ai-automation-for-businesses`
-   - `/blog/rank-number-one-on-google`
+3. First-party Next.js website source: `docs/shineovative-next.zip` (extracted into `scratch/website-source/`)
+4. First-party brand assets folder: `public/shineovative-assets/`
 
-## Verified Brand/Company Information
+## Verified Brand Design Tokens & System
 
-| Item | Verified reference / decision |
-|---|---|
-| Official company name for CRM | **Shineovative Solutions**. The current site repeatedly uses this name and explicitly advises consistency of the company name. |
-| Website | `shineovative.com` |
-| Public email | `info@shineovative.com` |
-| Public WhatsApp | `+91 9652006000` |
-| India location | Hyderabad, Telangana, India |
-| US presence wording | Remote-first operations serving all US time zones |
-| Service regions | USA, India, Saudi Arabia & globally |
-| Current footer | © 2026 Shineovative Solutions. All rights reserved. |
-| Current logo asset reference | `/updated-assets/shinovative-logo.webp` |
-| Current logo appearance | Metallic/interlocking three-loop emblem with dark graphite/black and silver treatment, blue/cyan light accents, and a `SHINOVATIVE SOLUTIONS` wordmark in the indexed asset. Note: asset path/wordmark artwork spells `SHINOVATIVE`; product/company text in the CRM must use the verified company spelling **Shineovative Solutions** unless the owner explicitly approves another wordmark asset. |
+> **Verified Baseline**: Extracted directly from the Shineovative Next.js website source (`docs/shineovative-next.zip` → `scratch/website-source/app/globals.css` and `app/layout.tsx`) and `public/shineovative-assets/`.
+
+| Token / Design Element | Verified Value | Source File Reference |
+|---|---|---|
+| **Base Background (Dark)** | `#000000` (`--black`) | `scratch/website-source/app/globals.css:4` |
+| **Surface Dark (Container)** | `#0a0a0a` (`--dark`) | `scratch/website-source/app/globals.css:5` |
+| **Card Surface Primary** | `#111111` (`--card`) | `scratch/website-source/app/globals.css:6` |
+| **Card Surface Secondary** | `#141414` (`--card2`) | `scratch/website-source/app/globals.css:7` |
+| **Border Color** | `rgba(255, 255, 255, 0.07)` (`--border`) | `scratch/website-source/app/globals.css:8` |
+| **Primary Accent (Electric Blue/Cyan)** | `#00b4ff` (`--blue`, hover `#38bdf8`) | `scratch/website-source/app/globals.css:12-13` |
+| **Secondary Accent (Amber/Orange)** | `#f59e0b` (`--orange`, hover `#fbbf24`) | `scratch/website-source/app/globals.css:14-15` |
+| **Body / Sans Font** | `Inter` (weights: `400`, `500`, `600`) | `scratch/website-source/app/layout.tsx:6-11` |
+| **Heading Font** | `Outfit` (weights: `600`, `700`, `800`) | `scratch/website-source/app/layout.tsx:13-18` |
+| **Primary Text** | `#ffffff` (`--white`) | `scratch/website-source/app/globals.css:9` |
+| **Muted Text (Light)** | `#94a3b8` (`--gray-l`) | `scratch/website-source/app/globals.css:10` |
+| **Muted Text (Dark)** | `#6b7280` (`--gray`) | `scratch/website-source/app/globals.css:11` |
+| **Success Status / Badge** | `#22c55e` (`--green`, bg `rgba(34,197,94,0.1)`, text `#86efac`) | `scratch/website-source/app/globals.css:17, 26-28` |
+| **Destructive / Error** | `#ef4444` (`--red`) | `scratch/website-source/app/globals.css:16` |
+| **Official Logo Asset** | `/shineovative-assets/shinovative-logo.webp` | `public/shineovative-assets/shinovative-logo.webp` |
+| **Official Favicon Asset** | `/shineovative-assets/favicon.ico` | `public/shineovative-assets/favicon.ico` |
 
 ## Verified Marketing-Site Visual/Interaction Patterns Worth Translating to the CRM
 
 These are **design-language references**, not instructions to clone the marketing page:
 
-- Strong outcome-first headline hierarchy.
-- Clean, premium, high-contrast presentation.
+- Strong outcome-first headline hierarchy using `Outfit` font for headings and `Inter` for body/tables.
+- High-contrast dark surfaces (`#000000` / `#0a0a0a` / `#111111`) with subtle `#00b4ff` electric blue accents & `rgba(255,255,255,0.07)` borders.
 - Metric/KPI cards and a “live dashboard” presentation pattern are already part of the public brand language.
-- Repeated use of small status/assurance badges (rating, guarantee, WhatsApp support, no-contract messaging).
+- Repeated use of small status/assurance badges (green live indicator, WhatsApp support badge).
 - Compact cards for diagnostic/business metrics.
-- Before/after comparison structure.
-- Clear, high-intent CTA buttons.
-- Visual emphasis on leads, calls, rankings, revenue, and operational outcomes rather than vanity metrics.
-- Minimal/premium AI illustrations are used on current AI content pages.
-- The current logo introduces metallic graphite/silver with electric blue/cyan highlights; these may inform the application identity **only after exact web/app tokens are captured**.
+- Clear, high-intent action buttons with electric blue / dark graphite styling.
+- Visual emphasis on leads, calls, rankings, revenue, and operational outcomes.
 
-### Dashboard-Applicable Translation
+### Dashboard & UI Translation Strategy
 
-Use the website language as inspiration for an application, not a marketing-page copy:
+Translate website visual language into software application primitives:
 
-- KPI cards: unread conversations, follow-ups due, open deals, response time, campaign outcomes.
-- Small “live/realtime” indicators where the underlying data is actually realtime.
-- Status chips with concise wording.
-- Strong information hierarchy: page outcome → primary action → operating metrics → work queue.
-- Cards should support fast scanning and action, not decorative marketing sections.
-- Avoid excessive gradients/hero effects inside dense CRM workspaces.
+- **Typography**: Heading elements (`h1`, `h2`, `h3`, card titles, section titles) consume `Outfit` font; body text, inputs, tables, and data values consume `Inter` font.
+- **Colors**: Dark mode surfaces use `#000000` / `#0a0a0a` / `#111111` with `#00b4ff` primary action focus/glow and `rgba(255,255,255,0.07)` borders.
+- **KPI Cards**: Unread conversations, follow-ups due, open deals, response time, campaign outcomes.
+- **Realtime Indicators**: Live status chips (`#22c55e` green dot animation) for active connection / unread events.
+- **Card Hierarchy**: Dense operational workspaces prefer clean 1px borders and high-contrast text scanability over decorative marketing sections.
 
-## Brand Values That Must Be Verified Before Stage 3 Code
+## Brand Values Verified Status
 
-The indexed/text research available during planning did **not** expose the live site's computed CSS. Therefore the following must be inspected from the actual live DOM/CSS/assets before they are written into our design tokens:
+All previously unverified brand values have now been fully resolved and verified from `docs/shineovative-next.zip` and `public/shineovative-assets/`:
 
-- `[!]` Exact primary color(s).
-- `[!]` Exact secondary/accent color(s).
-- `[!]` Exact gradients and gradient stops.
-- `[!]` Exact website font family/families.
-- `[!]` Exact font weights actually loaded.
-- `[!]` Exact heading/body size scale.
-- `[!]` Exact button radius/padding/border treatment.
-- `[!]` Exact card radius/border treatment.
-- `[!]` Exact shadow values.
-- `[!]` Exact spacing rhythm/grid/container widths.
-- `[!]` Current favicon URL/file and variants.
-- `[!]` Any alternate horizontal/icon-only/dark/light logo variants actually available on the site.
-- `[!]` Any custom icon set vs standard icon library usage.
+- `[x]` Exact primary color: `#00b4ff` (`--blue`, hover `#38bdf8`).
+- `[x]` Exact secondary/accent color: `#f59e0b` (`--orange`, hover `#fbbf24`).
+- `[x]` Exact gradients: `radial-gradient(ellipse 80% 50% at 50% 0%, rgba(0,180,255,0.12) 0%, transparent 60%)`.
+- `[x]` Exact website font families: `Inter` (body/sans) + `Outfit` (headings).
+- `[x]` Exact font weights loaded: `Inter` (400, 500, 600), `Outfit` (600, 700, 800).
+- `[x]` Exact card & surface colors: `#000000`, `#0a0a0a`, `#111111`, `#141414`.
+- `[x]` Current favicon & logo assets: `/shineovative-assets/shinovative-logo.webp` and `/shineovative-assets/favicon.ico`.
 
 ### Required Method for Resolving the Above
 

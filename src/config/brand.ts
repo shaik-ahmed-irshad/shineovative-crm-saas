@@ -21,14 +21,14 @@ export const BRAND_CONFIG = {
   supportPhone: "+91 9652006000",
   /** Main application logo configuration */
   logo: {
-    src: "/updated-assets/shinovative-logo.webp",
+    src: "/shineovative-assets/shinovative-logo.webp",
     fallbackSrc: "/brand/logo.svg",
     alt: "Shineovative Solutions Logo",
     width: 160,
     height: 40,
   },
   /** App Icon / Favicon configuration */
-  favicon: "/icon",
+  favicon: "/shineovative-assets/favicon.ico",
   /** Default metadata description */
   description: "Enterprise WhatsApp CRM by Shineovative Solutions — shared inbox, deals, campaigns, and AI assistant.",
 } as const;

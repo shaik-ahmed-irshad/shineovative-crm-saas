@@ -38,15 +38,14 @@ export default function AgentsPage() {
 
   return (
     <div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2.5">
         <Bot className="h-6 w-6 text-primary" />
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          AI Agents
+        <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
+          AI Assistant
         </h1>
       </div>
       <p className="mt-1 text-sm text-muted-foreground">
-        Your bring-your-own-key AI agent — set it up, then test it in the
-        playground before it replies to customers in the inbox.
+        Your bring-your-own-key AI Assistant powered by Shineovative Solutions — configure knowledge sources, system prompts, and test in the playground before assisting customers in the inbox.
       </p>
 
       {decided && (

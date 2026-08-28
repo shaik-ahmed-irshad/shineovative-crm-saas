@@ -148,6 +148,19 @@ html[data-mode="light"] {
 /* ---- ACCENT: primary color ---- */
 
 :root,
+html[data-theme="cyan"] {
+  --primary: oklch(0.7 0.19 230);
+  --primary-foreground: oklch(0.1 0.01 260);
+  --primary-hover: oklch(0.75 0.17 230);
+  --primary-soft: oklch(0.7 0.19 230 / 0.12);
+  --primary-soft-2: oklch(0.7 0.19 230 / 0.22);
+  --ring: oklch(0.7 0.19 230);
+  --chart-1: oklch(0.7 0.19 230);
+  --sidebar-primary: oklch(0.7 0.19 230);
+  --sidebar-primary-foreground: oklch(0.1 0.01 260);
+  --sidebar-ring: oklch(0.7 0.19 230);
+}
+
 html[data-theme="violet"] {
   --primary: oklch(0.526 0.247 293);
   --primary-foreground: oklch(0.985 0 0);
@@ -226,5 +239,8 @@ html[data-theme="rose"] {
   }
   html {
     @apply font-sans;
+  }
+  h1, h2, h3, h4, h5, h6, .font-heading {
+    font-family: var(--font-heading), var(--font-sans);
   }
 }

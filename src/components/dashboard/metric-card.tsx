@@ -23,18 +23,18 @@ interface MetricCardProps {
 
 export function MetricCard({ title, value, icon: Icon, delta, subtitle }: MetricCardProps) {
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="rounded-xl border border-border bg-card/80 p-5 backdrop-blur-sm transition-all duration-200 hover:border-primary/40 hover:shadow-md">
       <div className="flex items-start justify-between">
-        <p className="text-sm font-medium text-muted-foreground">{title}</p>
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+        <p className="font-heading text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</p>
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
           <Icon className="h-4 w-4" />
         </div>
       </div>
-      <p className="mt-3 text-[28px] leading-none font-bold tabular-nums text-foreground">
+      <p className="mt-3 font-heading text-2xl font-bold tracking-tight tabular-nums text-foreground">
         {value}
       </p>
       {delta ? <DeltaRow sign={delta.sign} label={delta.label} /> : subtitle ? (
-        <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>
+        <p className="mt-2 text-xs font-medium text-muted-foreground">{subtitle}</p>
       ) : null}
     </div>
   )

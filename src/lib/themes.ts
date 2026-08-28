@@ -14,6 +14,7 @@
  */
 
 export const THEME_IDS = [
+  "cyan",
   "violet",
   "emerald",
   "cobalt",
@@ -23,7 +24,7 @@ export const THEME_IDS = [
 
 export type ThemeId = (typeof THEME_IDS)[number];
 
-export const DEFAULT_THEME: ThemeId = "violet";
+export const DEFAULT_THEME: ThemeId = "cyan";
 
 export const STORAGE_KEY = "shineovative.theme";
 
@@ -68,33 +69,39 @@ export interface ThemeMeta {
 
 export const THEMES: ReadonlyArray<ThemeMeta> = [
   {
+    id: "cyan",
+    name: "Cyan (Shineovative)",
+    tagline: "Shineovative official electric blue accent.",
+    swatch: "oklch(0.7 0.19 230)",
+  },
+  {
     id: "violet",
     name: "Violet",
-    tagline: "The default — confident, slightly playful.",
+    tagline: "Confident, slightly playful.",
     swatch: "oklch(0.526 0.247 293)",
   },
   {
     id: "emerald",
     name: "Emerald",
-    tagline: "Growth-coded, nods at messaging without copying WhatsApp green.",
+    tagline: "Growth-coded green.",
     swatch: "oklch(0.62 0.16 162)",
   },
   {
     id: "cobalt",
     name: "Cobalt",
-    tagline: "Clean B2B-SaaS blue — calm and product-y.",
+    tagline: "Clean B2B-SaaS blue.",
     swatch: "oklch(0.585 0.2 254)",
   },
   {
     id: "amber",
     name: "Amber",
-    tagline: "Warm and friendly — feels good for SMB teams.",
+    tagline: "Warm and friendly.",
     swatch: "oklch(0.745 0.16 65)",
   },
   {
     id: "rose",
     name: "Rose",
-    tagline: "Bold and modern — D2C, creator-economy, lifestyle.",
+    tagline: "Bold and modern.",
     swatch: "oklch(0.645 0.22 16)",
   },
 ];

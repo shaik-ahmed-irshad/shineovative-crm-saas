@@ -15,9 +15,17 @@ import {
   THEME_IDS,
 } from "@/lib/themes";
 
+import { Inter, Outfit } from "next/font/google";
+
 const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
+});
+
+const outfit = Outfit({
+  variable: "--font-heading",
+  subsets: ["latin"],
+  weight: ["600", "700", "800"],
 });
 
 import { BRAND_CONFIG } from "@/config/brand";
@@ -92,7 +100,7 @@ export default async function RootLayout({
       lang={locale}
       data-theme={DEFAULT_THEME}
       data-mode={DEFAULT_MODE}
-      className={`${inter.variable} h-full antialiased`}
+      className={`${inter.variable} ${outfit.variable} h-full antialiased`}
       // The `theme-boot` script below rewrites `data-theme` and
       // `data-mode` on <html> from localStorage before React hydrates,
       // so for any non-default choice the client DOM intentionally

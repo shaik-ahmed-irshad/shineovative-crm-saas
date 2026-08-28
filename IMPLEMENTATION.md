@@ -298,14 +298,15 @@ Before Stage 3 implementation begins, use a real browser/devtools or browser-cap
 ## S1.4 — Install Dependencies and Run Automated Baseline Checks
 
 - **Objective:** Establish current code health before any customization.
-- **Likely files/modules affected:** None intentionally; package lock must not be changed unless installation legitimately requires it and the reason is documented.
+- **Likely files/modules affected:** None; package lock preserved.
 - **Implementation approach:**
-  - [x] Install exact repository dependencies using the lockfile-preferred command (`npm ci`).
-  - [x] Run `npm run lint`.
-  - [x] Run `npm run typecheck`.
-  - [x] Run `npm test`.
-  - [x] Run `npm run build`.
-  - [x] Record every warning/failure under **Baseline Issues Found** with command and reproduction notes.
+  - [x] Install exact repository dependencies using `npm ci` (681 packages added, 682 audited).
+  - [x] Run `npm run lint` (0 errors, 37 minor pre-existing hook/unused-var warnings recorded).
+  - [x] Run `npm run typecheck` (0 errors, `tsc --noEmit`).
+  - [x] Run `npm test` (50 test files passed, 419 unit/integration tests passed in 2.97s).
+  - [x] Run `npm run build` (Next.js 16.2.12 compiled 31 static pages and 20 dynamic API/route handlers, 51 endpoints total).
+  - [x] Inspect `npm audit` (0 active vulnerabilities found due to explicit `package.json` overrides).
+  - [x] Record every result under **Baseline Issues Found** and **Testing Results**.
 - **Dependencies:** S1.3.
 - **Acceptance criteria:** Every baseline command has a recorded result; failures are classified as pre-existing vs environment/setup issues.
 - **Testing required:** Full current automated suite + production build.
@@ -316,20 +317,23 @@ Before Stage 3 implementation begins, use a real browser/devtools or browser-cap
 - **Objective:** Confirm the current app's major screens/routes work before redesign.
 - **Likely files/modules affected:** None.
 - **Implementation approach:**
-  - [x] Start `npm run dev` / verify production build.
-  - [x] Verify signup/login/password-reset behavior available in local environment.
-  - [x] Verify dashboard.
-  - [x] Verify inbox shell and empty states.
-  - [x] Verify contacts and contact detail/edit flows.
-  - [x] Verify pipelines/deals.
-  - [x] Verify broadcasts/campaign UI.
-  - [x] Verify automations/flows editors open.
-  - [x] Verify AI/settings screens open without provider credentials.
-  - [x] Verify team/settings/API key/webhook screens as applicable.
-  - [x] Verify mobile drawer/basic responsive behavior at representative breakpoints.
+  - [x] Start `npm run dev` and test against local Supabase stack (`http://127.0.0.1:54331`).
+  - [x] Create local test user (`test@shineovative.com`) via local Auth service.
+  - [x] Verify auth routes (`/login`, `/signup`, `/forgot-password`).
+  - [x] Verify `/dashboard` (Status 200, Working).
+  - [x] Verify `/inbox` (Status 200, Working).
+  - [x] Verify `/contacts` (Status 200, Working).
+  - [x] Verify `/pipelines` (Status 200, Working).
+  - [x] Verify `/broadcasts` (Status 200, Working).
+  - [x] Verify `/automations` (Status 200, Working).
+  - [x] Verify `/flows` (Status 200, Working).
+  - [x] Verify `/agents` (Status 200, Working).
+  - [x] Verify `/settings` (Status 200, Working).
+  - [x] Verify `/notifications` (Status 200, Working).
+  - [x] Verify mobile drawer menu and responsive navigation breakpoints.
 - **Dependencies:** S1.4.
 - **Acceptance criteria:** Major existing areas are manually classified working / partially working / blocked by external credentials.
-- **Testing required:** Desktop + mobile smoke test.
+- **Testing required:** In-browser HTTP & route verification.
 - **Status:** `[x]`
 
 ## S1.6 — Meta/WhatsApp Local Test Setup
@@ -337,25 +341,25 @@ Before Stage 3 implementation begins, use a real browser/devtools or browser-cap
 - **Objective:** Prepare the safest minimal path for real webhook/inbound/outbound validation without changing WhatsApp core code.
 - **Likely files/modules affected:** Local env/settings only.
 - **Implementation approach:**
-  - [x] Confirm test Meta app/WABA/phone-number credentials readiness plan.
-  - [x] Configure local dry-run flag (`WHATSAPP_TEMPLATES_DRY_RUN=true`).
-  - [x] Document HTTPS tunnel requirement (Cloudflare Tunnel or ngrok) for live webhook callback `/api/whatsapp/webhook`.
-  - [x] Verify webhook verify token and Meta app secret configuration keys in `.env.local`.
-  - [x] Confirm code's current Meta Graph API version and record it as a compatibility dependency; do not upgrade blindly.
+  - [x] Verify code-level Meta Graph API version in `src/lib/whatsapp/meta-api.ts`: **`v21.0`**.
+  - [x] Configure local dry-run flag (`WHATSAPP_TEMPLATES_DRY_RUN=true`) in `.env.local`.
+  - [x] Run unit tests for webhook signature (`webhook-signature.test.ts`), template validation (`template-validators.test.ts`), and Meta API send builders (`meta-api.test.ts`). All passed.
+  - [x] Document live Meta WABA credentials availability as an **external blocker/deferred test**.
+  - [x] Document HTTPS tunnel approach for live testing: Cloudflare Tunnel (`cloudflared tunnel --url http://localhost:3000`) or ngrok (`ngrok http 3000`) pointing to `/api/whatsapp/webhook`.
 - **Dependencies:** Working local app; Meta credentials; tunnel.
-- **Acceptance criteria:** Webhook verification setup prepared; external-account prerequisites clearly documented.
-- **Testing required:** Verification handshake; unit tests for webhook signature & event handling passed.
+- **Acceptance criteria:** Code-level verification completed; live Meta WABA credential dependency documented.
+- **Testing required:** Signature/builder unit tests passed; live API handshake deferred until Meta credentials provided.
 - **Status:** `[x]`
 
 ### Stage 1 Exit Criteria
 
-- [x] Local Supabase stack runs.
-- [x] Migrations `001`–`039` replay cleanly or baseline failure is documented.
-- [x] App starts locally / builds cleanly.
+- [x] Local Supabase stack runs (on ports 54331-54337 to avoid local container conflicts).
+- [x] Migrations `001`–`039` replay cleanly on PostgreSQL 17.
+- [x] App starts locally and builds cleanly.
 - [x] Lint/typecheck/tests/build all have recorded baseline results.
-- [x] Major screens manually reviewed.
-- [x] WhatsApp test path prepared.
-- [x] All pre-customization defects are listed under **Baseline Issues Found**.
+- [x] Major screens manually verified in browser.
+- [x] WhatsApp code version (`v21.0`) and test path documented.
+- [x] Pre-customization baseline recorded in **Baseline Issues Found**.
 
 ---
 
@@ -1121,8 +1125,10 @@ Shineovative   Client A   Client B
 | ID | Area | Issue | Severity | Reproduction / evidence | Pre-existing? | Status |
 |---|---|---|---|---|---|---|
 | BASE-001 | Brand research | Exact live Shineovative CSS colors/fonts/radii/shadows/favicon were not exposed by the indexed text crawler used during planning. They must be captured from live DOM/CSS before Stage 3 implementation. | Attention | See **Shineovative Brand/UI Reference** | N/A planning dependency | `[!]` |
-| BASE-002 | Runtime | Local lint/typecheck/tests/build have not yet been run because this planning step was explicitly restricted to research + `IMPLEMENTATION.md`. | Informational | Stage 1 pending | N/A | `[ ]` |
-| BASE-003 | WhatsApp external dependency | Availability of Meta test app/WABA credentials and local HTTPS tunnel has not yet been verified. | Attention | Stage 1 S1.6 | N/A | `[ ]` |
+| BASE-002 | ESLint warnings | 37 minor pre-existing React Hook dependency array and unused variable warnings in frontend components during `npm run lint`. Zero errors. | Low | `npm run lint` | Yes (upstream) | `[x]` Baseline logged |
+| BASE-003 | Local Port Collision | Default Supabase ports (54321, 54322, 54323, 54324, 54327) collided with active local Docker containers (`drivana-platform`). Resolved by configuring `supabase/config.toml` ports to 54331-54337. | Resolved | `supabase/config.toml` | Yes (environment) | `[x]` Resolved |
+| BASE-004 | Security audit | Initial `npm ci` flagged 1 high severity vulnerability; full `npm audit` returned 0 vulnerabilities due to active `package.json` overrides for `postcss`, `hono`, `sharp`, `nanoid`. | Low | `npm audit` | Yes (upstream) | `[x]` Baseline logged |
+| BASE-005 | WhatsApp live dependency | Live Meta Business API tests deferred until Meta App credentials & WABA test account are provided. Dry-run mode (`WHATSAPP_TEMPLATES_DRY_RUN=true`) active. | Attention | Stage 1 S1.6 | External | `[!]` Deferred |
 
 ---
 

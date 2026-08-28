@@ -31,3 +31,6 @@ port = 54333
 
 [inbucket]
 port = 54334
+
+[analytics]
+port = 54337

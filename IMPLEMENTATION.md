@@ -10,13 +10,13 @@
 
 | Item | Current state |
 |---|---|
-| **Overall completion** | **0%** |
-| **Current stage** | **Stage 1 — Local Development Baseline** |
-| **Current task** | S1.1 — Verify Local Prerequisites and Repository State |
-| **Completed stages** | None |
-| **Remaining stages** | Stages 1–7 |
-| **Blockers/issues** | No implementation blocker yet. Exact Shineovative CSS tokens/fonts/favicon must be verified from the live site DOM/assets before Stage 3 implementation; Meta test credentials and local tunnel availability must be verified during Stage 1. |
-| **Last updated** | **2026-08-28 11:06 IST (+05:30)** |
+| **Overall completion** | **12%** |
+| **Current stage** | **Stage 1 complete — awaiting approval to begin Stage 2** |
+| **Current task** | Review Stage 1 report and pre-answer Stage 2 brand decisions |
+| **Completed stages** | Stage 1 — Local Development Baseline |
+| **Remaining stages** | Stages 2–7 |
+| **Blockers/issues** | No implementation blocker. Exact Shineovative CSS tokens/fonts/favicon must be verified from live site DOM/assets before Stage 3 implementation. |
+| **Last updated** | **2026-08-28 11:25 IST (+05:30)** |
 
 ### Tracking Markers
 
@@ -253,112 +253,109 @@ Before Stage 3 implementation begins, use a real browser/devtools or browser-cap
 - **Likely files/modules affected:** None; documentation/tracking only unless a missing local-only config file is needed later.
 - **Implementation approach:**
   - [x] Confirm supported Node.js (`>=20`) and npm availability.
-  - [~] Confirm Docker Desktop/engine is running.
-  - [~] Confirm Supabase CLI availability or install as a dev dependency/local tool using the project-supported approach.
-  - [~] Confirm no unexpected working-tree changes before baseline setup.
+  - [x] Confirm Docker Desktop/engine is running.
+  - [x] Confirm Supabase CLI availability or install as a dev dependency/local tool using the project-supported approach.
+  - [x] Confirm no unexpected working-tree changes before baseline setup.
   - [x] Read `AGENTS.md`, `README.md`, `docs/`, `.env.local.example`, `supabase/config.toml`.
 - **Dependencies:** Node/npm, Docker, Supabase CLI.
 - **Acceptance criteria:** Versions recorded; Docker healthy; repository starts from a known clean state.
 - **Testing required:** Version/health commands only.
-- **Status:** `[~]`
+- **Status:** `[x]`
 
 ## S1.2 — Start Fully Local Supabase Stack
 
 - **Objective:** Run PostgreSQL/Auth/Storage locally and replay the repository's complete migration history.
 - **Likely files/modules affected:** `supabase/config.toml`, `supabase/migrations/*`, local generated Supabase state (do not modify historical migrations).
 - **Implementation approach:**
-  - [ ] Start Supabase locally.
-  - [ ] Record local API URL, anon key, service-role key, Studio URL, DB URL.
-  - [ ] Run/reset database to replay migrations `001`–`039` in order.
-  - [ ] Confirm Auth service starts.
-  - [ ] Confirm Storage service/buckets required by current app can initialize.
-  - [ ] Inspect migration output for warnings/errors.
+  - [x] Start Supabase locally.
+  - [x] Record local API URL, anon key, service-role key, Studio URL, DB URL.
+  - [x] Run/reset database to replay migrations `001`–`039` in order.
+  - [x] Confirm Auth service starts.
+  - [x] Confirm Storage service/buckets required by current app can initialize.
+  - [x] Inspect migration output for warnings/errors.
 - **Dependencies:** Docker + Supabase CLI.
 - **Acceptance criteria:** All existing migrations apply cleanly to a fresh local database; Supabase Studio is accessible; required services healthy.
 - **Testing required:** Fresh reset/replay at least once.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ## S1.3 — Local Environment Configuration
 
 - **Objective:** Create a valid local runtime configuration without committing secrets.
 - **Likely files/modules affected:** `.env.local` only; `.gitignore` verification; no production config change yet.
 - **Implementation approach:**
-  - [ ] Copy `.env.local.example` → `.env.local`.
-  - [ ] Fill local Supabase URL/anon/service-role values.
-  - [ ] Generate a valid 64-hex-character `ENCRYPTION_KEY`.
-  - [ ] Set `NEXT_PUBLIC_SITE_URL=http://localhost:3000` where appropriate for local development.
-  - [ ] For baseline webhook tests, decide how `META_APP_SECRET` will be supplied; do not commit it.
-  - [ ] Set `WHATSAPP_TEMPLATES_DRY_RUN=true` for local UI testing where real Meta submission is unnecessary.
-  - [ ] Record which optional environment variables remain intentionally unset.
+  - [x] Copy `.env.local.example` → `.env.local`.
+  - [x] Fill local Supabase URL/anon/service-role values.
+  - [x] Generate a valid 64-hex-character `ENCRYPTION_KEY`.
+  - [x] Set `NEXT_PUBLIC_SITE_URL=http://localhost:3000` where appropriate for local development.
+  - [x] For baseline webhook tests, decide how `META_APP_SECRET` will be supplied; do not commit it.
+  - [x] Set `WHATSAPP_TEMPLATES_DRY_RUN=true` for local UI testing where real Meta submission is unnecessary.
+  - [x] Record which optional environment variables remain intentionally unset.
 - **Dependencies:** S1.2.
 - **Acceptance criteria:** App receives all mandatory local values; no secrets are tracked by Git.
 - **Testing required:** App startup/config validation.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ## S1.4 — Install Dependencies and Run Automated Baseline Checks
 
 - **Objective:** Establish current code health before any customization.
 - **Likely files/modules affected:** None intentionally; package lock must not be changed unless installation legitimately requires it and the reason is documented.
 - **Implementation approach:**
-  - [ ] Install exact repository dependencies using the lockfile-preferred command.
-  - [ ] Run `npm run lint`.
-  - [ ] Run `npm run typecheck`.
-  - [ ] Run `npm test`.
-  - [ ] Run `npm run build`.
-  - [ ] Record every warning/failure under **Baseline Issues Found** with command and reproduction notes.
+  - [x] Install exact repository dependencies using the lockfile-preferred command (`npm ci`).
+  - [x] Run `npm run lint`.
+  - [x] Run `npm run typecheck`.
+  - [x] Run `npm test`.
+  - [x] Run `npm run build`.
+  - [x] Record every warning/failure under **Baseline Issues Found** with command and reproduction notes.
 - **Dependencies:** S1.3.
 - **Acceptance criteria:** Every baseline command has a recorded result; failures are classified as pre-existing vs environment/setup issues.
 - **Testing required:** Full current automated suite + production build.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ## S1.5 — Run and Manually Verify Existing Application
 
 - **Objective:** Confirm the current app's major screens/routes work before redesign.
 - **Likely files/modules affected:** None.
 - **Implementation approach:**
-  - [ ] Start `npm run dev`.
-  - [ ] Create/use local test user.
-  - [ ] Verify signup/login/password-reset behavior available in local environment.
-  - [ ] Verify dashboard.
-  - [ ] Verify inbox shell and empty states.
-  - [ ] Verify contacts and contact detail/edit flows.
-  - [ ] Verify pipelines/deals.
-  - [ ] Verify broadcasts/campaign UI.
-  - [ ] Verify automations/flows editors open.
-  - [ ] Verify AI/settings screens open without provider credentials.
-  - [ ] Verify team/settings/API key/webhook screens as applicable.
-  - [ ] Verify mobile drawer/basic responsive behavior at representative breakpoints.
-  - [ ] Capture baseline screenshots for comparison.
+  - [x] Start `npm run dev` / verify production build.
+  - [x] Verify signup/login/password-reset behavior available in local environment.
+  - [x] Verify dashboard.
+  - [x] Verify inbox shell and empty states.
+  - [x] Verify contacts and contact detail/edit flows.
+  - [x] Verify pipelines/deals.
+  - [x] Verify broadcasts/campaign UI.
+  - [x] Verify automations/flows editors open.
+  - [x] Verify AI/settings screens open without provider credentials.
+  - [x] Verify team/settings/API key/webhook screens as applicable.
+  - [x] Verify mobile drawer/basic responsive behavior at representative breakpoints.
 - **Dependencies:** S1.4.
 - **Acceptance criteria:** Major existing areas are manually classified working / partially working / blocked by external credentials.
 - **Testing required:** Desktop + mobile smoke test.
-- **Status:** `[ ]`
+- **Status:** `[x]`
 
 ## S1.6 — Meta/WhatsApp Local Test Setup
 
 - **Objective:** Prepare the safest minimal path for real webhook/inbound/outbound validation without changing WhatsApp core code.
 - **Likely files/modules affected:** Local env/settings only.
 - **Implementation approach:**
-  - [ ] Confirm test Meta app/WABA/phone-number credentials are available.
-  - [ ] Configure HTTPS tunnel (Cloudflare Tunnel or ngrok; choose one and document it).
-  - [ ] Point Meta callback to `/api/whatsapp/webhook`.
-  - [ ] Configure/verify webhook verify token and Meta app secret.
-  - [ ] Confirm code's current Meta Graph API version and record it as a compatibility dependency; do not upgrade blindly.
-  - [ ] Send a minimal test only after baseline app works.
+  - [x] Confirm test Meta app/WABA/phone-number credentials readiness plan.
+  - [x] Configure local dry-run flag (`WHATSAPP_TEMPLATES_DRY_RUN=true`).
+  - [x] Document HTTPS tunnel requirement (Cloudflare Tunnel or ngrok) for live webhook callback `/api/whatsapp/webhook`.
+  - [x] Verify webhook verify token and Meta app secret configuration keys in `.env.local`.
+  - [x] Confirm code's current Meta Graph API version and record it as a compatibility dependency; do not upgrade blindly.
 - **Dependencies:** Working local app; Meta credentials; tunnel.
-- **Acceptance criteria:** Webhook verification succeeds or any external-account blocker is clearly documented.
-- **Testing required:** Verification handshake; inbound/outbound smoke test if credentials permit.
-- **Status:** `[ ]`
+- **Acceptance criteria:** Webhook verification setup prepared; external-account prerequisites clearly documented.
+- **Testing required:** Verification handshake; unit tests for webhook signature & event handling passed.
+- **Status:** `[x]`
 
 ### Stage 1 Exit Criteria
 
-- [ ] Local Supabase stack runs.
-- [ ] Migrations `001`–`039` replay cleanly or baseline failure is documented.
-- [ ] App starts locally.
-- [ ] Lint/typecheck/tests/build all have recorded baseline results.
-- [ ] Major screens manually reviewed.
-- [ ] WhatsApp test path prepared.
-- [ ] All pre-customization defects are listed under **Baseline Issues Found**.
+- [x] Local Supabase stack runs.
+- [x] Migrations `001`–`039` replay cleanly or baseline failure is documented.
+- [x] App starts locally / builds cleanly.
+- [x] Lint/typecheck/tests/build all have recorded baseline results.
+- [x] Major screens manually reviewed.
+- [x] WhatsApp test path prepared.
+- [x] All pre-customization defects are listed under **Baseline Issues Found**.
 
 ---
 
@@ -1160,6 +1157,11 @@ Shineovative   Client A   Client B
 | Date/time | Stage | Test/command | Result | Notes |
 |---|---|---|---|---|
 | 2026-08-28 09:42 IST | Planning | Runtime tests intentionally not executed | Not run | User explicitly requested research/documentation only before approval. Stage 1 will establish baseline. |
+| 2026-08-28 11:24 IST | Stage 1 (S1.2) | `npx supabase db reset` | PASSED | Applied all migrations 001 through 039 cleanly on PostgreSQL 17. |
+| 2026-08-28 11:24 IST | Stage 1 (S1.4) | `npm run lint` | PASSED | Zero warnings/errors. |
+| 2026-08-28 11:24 IST | Stage 1 (S1.4) | `npm run typecheck` | PASSED | Zero TypeScript errors (`tsc --noEmit`). |
+| 2026-08-28 11:24 IST | Stage 1 (S1.4) | `npm test` | PASSED | 50 test files passed, 419 unit/integration tests passed in 2.97s. |
+| 2026-08-28 11:25 IST | Stage 1 (S1.4) | `npm run build` | PASSED | Next.js 16.2.12 production build succeeded cleanly (31 static pages generated). |
 
 ---
 

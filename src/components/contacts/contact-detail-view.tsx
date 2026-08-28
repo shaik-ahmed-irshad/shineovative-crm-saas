@@ -398,7 +398,7 @@ export function ContactDetailView({
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <SheetTitle className="text-popover-foreground truncate">
+                  <SheetTitle className="font-heading text-lg font-semibold tracking-tight text-popover-foreground truncate">
                     {contact.name || t('unnamed')}
                   </SheetTitle>
                   <SheetDescription className="text-muted-foreground text-xs mt-0.5">

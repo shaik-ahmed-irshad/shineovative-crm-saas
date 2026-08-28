@@ -454,12 +454,12 @@ function ConversationItem({
     <button
       onClick={handleClick}
       className={cn(
-        "flex w-full items-start gap-3 px-3 py-3 text-left transition-colors hover:bg-muted/50",
-        isActive && "border-l-2 border-primary bg-muted/70"
+        "flex w-full items-start gap-3 px-3.5 py-3 text-left transition-all duration-150 border-b border-border/40 hover:bg-card/80",
+        isActive && "border-l-2 border-primary bg-primary/12 shadow-sm"
       )}
     >
       {/* Avatar */}
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium text-foreground">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-heading font-semibold text-primary">
         {contact?.avatar_url ? (
           <img
             src={contact.avatar_url}
@@ -474,7 +474,7 @@ function ConversationItem({
       {/* Content */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-sm font-medium text-foreground">
+          <span className="truncate font-heading text-sm font-semibold tracking-tight text-foreground">
             {displayName}
           </span>
           <span className="shrink-0 text-[10px] text-muted-foreground">{timeAgo}</span>

@@ -9,7 +9,6 @@ import { toast } from 'sonner';
 import type { Contact, Tag, ContactNote, CustomField, Deal, MessageTemplate } from '@/types';
 import {
   TemplatePicker,
-  type TemplateSendValues,
 } from '@/components/inbox/template-picker';
 import {
   Sheet,
@@ -34,8 +33,6 @@ import {
   Plus,
   Trash2,
   Save,
-  DollarSign,
-  LayoutTemplate,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 

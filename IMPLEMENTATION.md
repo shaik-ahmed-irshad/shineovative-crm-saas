@@ -1193,9 +1193,10 @@ Shineovative   Client A   Client B
 
 > Include only confirmed issues or intentionally deferred technical work. Do not use this section as a feature wishlist.
 
-- `[!]` Brand DOM/CSS capture still required before exact Stage 3 design tokens can be finalized.
-- `[ ]` Repository package version/changelog/code level should be compared against current upstream during Stage 1/update planning; do not infer release level from `package.json` alone.
-- `[ ]` Current Meta Graph API version used in code should be recorded and compatibility-checked before production; do not upgrade as part of branding work without a dedicated test.
+- `[x]` Shineovative website source (`docs/shineovative-next.zip`) and assets (`public/shineovative-assets/`) audited; exact design tokens and typography integrated in Stage 3.
+- `[!]` Live Meta/WABA credentials (`META_APP_SECRET` and test WABA phone number) not provided in local environment; live Meta WABA integration documented as BLOCKED until production secrets are supplied in Stage 6.
+- `[ ]` Repository package version/changelog/code level should be compared against current upstream during future maintenance; do not infer release level from `package.json` alone.
+- `[ ]` Current Meta Graph API version used in code should be recorded and compatibility-checked before production deployment.
 - `[ ]` MFA/TOTP was not found during prior repository inspection; this is **not current scope** unless internal security review later promotes it.
 
 ---
@@ -1214,10 +1215,11 @@ Shineovative   Client A   Client B
 
 # Immediate Next Action After Approval
 
-1. Set Progress Summary to Stage 1 / S1.1 `[~]`.
-2. Verify local prerequisites and clean repository state.
-3. Start the fully local Supabase stack and replay migrations.
-4. Configure `.env.local` without committing secrets.
-5. Run lint → typecheck → tests → production build and record every baseline result before changing application code.
+1. Await explicit user approval to begin **Stage 6 — Shineovative Internal Release**.
+2. Execute Stage 6 Pre-flight checklist:
+   - Configure production environment variables and service-role keys.
+   - Configure production `ENCRYPTION_KEY`.
+   - Setup live Meta WABA credentials and webhook endpoints.
+   - Run production health checks.
 
-**Do not begin Stage 2 or UI redesign until the Stage 1 baseline is recorded.**
+**Do NOT begin Stage 6 until explicitly approved.**

@@ -44,7 +44,20 @@ const STATUS_COLORS: Record<ConversationStatus, string> = {
 
 
 
-type InboxFilter = ConversationStatus | "all" | "unread";
+import { useAuth } from "@/hooks/use-auth";
+import { getFollowUpState, formatFollowUpLabel } from "@/lib/inbox/followup-utils";
+import { Clock, Calendar } from "lucide-react";
+
+type InboxFilter =
+  | "all"
+  | "my"
+  | "unassigned"
+  | "unread"
+  | "needs_followup"
+  | "overdue_followup"
+  | "open"
+  | "pending"
+  | "closed";
 
 export function ConversationList({
   activeConversationId,
@@ -54,10 +67,15 @@ export function ConversationList({
   resyncToken = 0,
 }: ConversationListProps) {
   const t = useTranslations("Inbox.conversationList");
+  const { user } = useAuth();
   
   const FILTER_OPTIONS: { label: string; value: InboxFilter }[] = useMemo(() => [
     { label: t("filterAll"), value: "all" },
+    { label: "My Conversations", value: "my" },
+    { label: "Unassigned", value: "unassigned" },
     { label: t("filterUnread"), value: "unread" },
+    { label: "Needs Follow-up", value: "needs_followup" },
+    { label: "Follow-up Overdue", value: "overdue_followup" },
     { label: t("filterOpen"), value: "open" },
     { label: t("filterPending"), value: "pending" },
     { label: t("filterClosed"), value: "closed" },
@@ -161,8 +179,16 @@ export function ConversationList({
   const filtered = useMemo(() => {
     let result = conversations;
 
-    if (filter === "unread") {
+    if (filter === "my") {
+      result = result.filter((c) => c.assigned_agent_id === user?.id);
+    } else if (filter === "unassigned") {
+      result = result.filter((c) => !c.assigned_agent_id);
+    } else if (filter === "unread") {
       result = result.filter((c) => c.unread_count > 0);
+    } else if (filter === "needs_followup") {
+      result = result.filter((c) => c.follow_up_at != null && !c.follow_up_completed_at);
+    } else if (filter === "overdue_followup") {
+      result = result.filter((c) => getFollowUpState(c) === "overdue");
     } else if (filter !== "all") {
       result = result.filter((c) => c.status === filter);
     }
@@ -188,7 +214,7 @@ export function ConversationList({
     }
 
     return result;
-  }, [conversations, filter, search, selectedTagIds, selectedCompany]);
+  }, [conversations, filter, search, selectedTagIds, selectedCompany, user?.id]);
 
   const toggleTag = useCallback((id: string) => {
     setSelectedTagIds((prev) =>
@@ -450,6 +476,9 @@ function ConversationItem({
       })
     : "";
 
+  const followUpState = getFollowUpState(conversation);
+  const followUpText = formatFollowUpLabel(conversation.follow_up_at);
+
   return (
     <button
       onClick={handleClick}
@@ -479,6 +508,27 @@ function ConversationItem({
           </span>
           <span className="shrink-0 text-[10px] text-muted-foreground">{timeAgo}</span>
         </div>
+
+        {/* Follow-up status badge if scheduled */}
+        {followUpState !== "none" && followUpState !== "completed" && (
+          <div className="mt-1 flex items-center gap-1">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full px-1.5 py-0.2 text-[9px] font-heading font-semibold uppercase tracking-wider",
+                followUpState === "overdue"
+                  ? "bg-red-500/15 text-red-400 border border-red-500/30"
+                  : followUpState === "due_today"
+                  ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                  : "bg-primary/15 text-primary border border-primary/30"
+              )}
+            >
+              <Clock className="h-2.5 w-2.5" />
+              {followUpState === "overdue" ? "Overdue" : followUpState === "due_today" ? "Due Today" : "Follow-up"}
+            </span>
+            <span className="truncate text-[10px] text-muted-foreground">{conversation.follow_up_note || followUpText}</span>
+          </div>
+        )}
+
         <div className="mt-0.5 flex items-center justify-between gap-2">
           <p className="truncate text-xs text-muted-foreground">
             {conversation.last_message_text || t("noMessagesYet")}

@@ -41,6 +41,9 @@ interface DealFormProps {
   pipelineId: string;
   stages: PipelineStage[];
   defaultStageId?: string;
+  initialContactId?: string;
+  initialConversationId?: string;
+  initialTitle?: string;
   onSaved: () => void;
 }
 
@@ -51,6 +54,9 @@ export function DealForm({
   pipelineId,
   stages,
   defaultStageId,
+  initialContactId,
+  initialConversationId,
+  initialTitle,
   onSaved,
 }: DealFormProps) {
   const t = useTranslations("Pipelines.form");
@@ -95,16 +101,16 @@ export function DealForm({
       setExpectedCloseDate(deal.expected_close_date ?? "");
       setNotes(deal.notes ?? "");
     } else {
-      setTitle("");
+      setTitle(initialTitle || "");
       setValue("");
       setCurrency(defaultCurrency);
-      setContactId("");
+      setContactId(initialContactId || "");
       setStageId(defaultStageId || stages[0]?.id || "");
       setAssignedTo("");
       setExpectedCloseDate("");
       setNotes("");
     }
-  }, [open, deal, defaultStageId, stages, defaultCurrency]);
+  }, [open, deal, defaultStageId, stages, defaultCurrency, initialTitle, initialContactId]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   // Load supporting data once the sheet is open
@@ -163,6 +169,7 @@ export function DealForm({
       value: parseFloat(value) || 0,
       currency,
       contact_id: contactId,
+      conversation_id: initialConversationId || linkedConversation?.id || null,
       pipeline_id: pipelineId,
       stage_id: stageId,
       assigned_to: assignedTo || null,

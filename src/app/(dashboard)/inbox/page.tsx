@@ -17,6 +17,10 @@ import { toast } from "sonner";
 import { WifiOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import { FollowUpModal } from "@/components/inbox/followup-modal";
+import { DealForm } from "@/components/pipelines/deal-form";
+import type { PipelineStage } from "@/types";
+
 // Remembers the agent's show/hide choice for the desktop contact panel
 // across reloads and sessions (device-scoped, like the theme prefs).
 const CONTACT_PANEL_STORAGE_KEY = "shineovative:inbox:contact-panel-open";
@@ -51,6 +55,42 @@ function InboxPageInner() {
   const [whatsappConnected, setWhatsappConnected] = useState<boolean | null>(
     null
   );
+
+  // Follow-up and Deal creation modal states
+  const [followUpModalOpen, setFollowUpModalOpen] = useState(false);
+  const [dealFormOpen, setDealFormOpen] = useState(false);
+  const [pipelineId, setPipelineId] = useState<string>("");
+  const [pipelineStages, setPipelineStages] = useState<PipelineStage[]>([]);
+
+  const handleOpenFollowUp = useCallback(() => {
+    setFollowUpModalOpen(true);
+  }, []);
+
+  const handleFollowUpSaved = useCallback((updatedConv: Conversation) => {
+    setConversations((prev) =>
+      prev.map((c) => (c.id === updatedConv.id ? updatedConv : c))
+    );
+    setActiveConversation(updatedConv);
+  }, []);
+
+  const handleOpenCreateDeal = useCallback(async () => {
+    if (!activeContact) return;
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("pipelines")
+      .select("id, pipeline_stages(*)")
+      .order("created_at")
+      .limit(1)
+      .maybeSingle();
+
+    if (data) {
+      setPipelineId(data.id);
+      setPipelineStages((data.pipeline_stages as PipelineStage[]) || []);
+      setDealFormOpen(true);
+    } else {
+      toast.error("No sales pipeline found. Please create a pipeline in Deals first.");
+    }
+  }, [activeContact]);
   /**
    * Bumped whenever we want children (ConversationList, MessageThread)
    * to refetch from the DB — used as a safety net against missed
@@ -618,6 +658,8 @@ function InboxPageInner() {
             onUpdateMessage={handleUpdateMessage}
             onStatusChange={handleStatusChange}
             onAssignChange={handleAssignChange}
+            onScheduleFollowUp={handleOpenFollowUp}
+            onCreateDeal={handleOpenCreateDeal}
             onBack={handleCloseConversation}
             resyncToken={resyncToken}
             onRefresh={handleManualRefresh}
@@ -632,10 +674,34 @@ function InboxPageInner() {
             toggle — which is itself desktop-only — never affects it. */}
         {contactPanelOpen && (
           <div className="hidden lg:block">
-            <ContactSidebar contact={activeContact} />
+            <ContactSidebar contact={activeContact} onCreateDeal={handleOpenCreateDeal} />
           </div>
         )}
       </div>
+
+      {/* Follow-up / Snooze Modal */}
+      <FollowUpModal
+        open={followUpModalOpen}
+        onOpenChange={setFollowUpModalOpen}
+        conversation={activeConversation}
+        onSaved={handleFollowUpSaved}
+      />
+
+      {/* Create Deal Modal */}
+      {dealFormOpen && pipelineId && (
+        <DealForm
+          open={dealFormOpen}
+          onOpenChange={setDealFormOpen}
+          pipelineId={pipelineId}
+          stages={pipelineStages}
+          initialContactId={activeContact?.id}
+          initialConversationId={activeConversation?.id}
+          initialTitle={activeContact?.name ? `Deal - ${activeContact.name}` : `Deal - ${activeContact?.phone ?? "Contact"}`}
+          onSaved={() => {
+            toast.success("Deal created successfully!");
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -181,6 +181,11 @@ export interface Conversation {
   ai_autoreply_disabled?: boolean;
   ai_reply_count?: number;
   ai_handoff_summary?: string | null;
+  /** Follow-up / Snooze scheduling (migration 040) */
+  follow_up_at?: string | null;
+  follow_up_note?: string | null;
+  follow_up_set_by_user_id?: string | null;
+  follow_up_completed_at?: string | null;
 }
 
 // ============================================================

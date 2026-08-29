@@ -27,10 +27,13 @@ import {
   RefreshCw,
   PanelRightOpen,
   PanelRightClose,
+  Briefcase,
 } from "lucide-react";
 import { format, isToday, isYesterday, differenceInHours } from "date-fns";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { getFollowUpState, formatFollowUpLabel } from "@/lib/inbox/followup-utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -73,6 +76,8 @@ interface MessageThreadProps {
     conversationId: string,
     assignedAgentId: string | null,
   ) => void;
+  onScheduleFollowUp?: () => void;
+  onCreateDeal?: () => void;
   /**
    * On mobile, the thread is shown full-screen with the conversation list
    * hidden. This callback lets the page deselect the active conversation
@@ -938,6 +943,51 @@ export function MessageThread({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Follow-up button */}
+          {onScheduleFollowUp && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onScheduleFollowUp}
+              className={cn(
+                "h-7 gap-1 px-2.5 text-xs font-heading font-semibold transition-all",
+                conversation.follow_up_at && !conversation.follow_up_completed_at
+                  ? getFollowUpState(conversation) === "overdue"
+                    ? "border-red-500/40 bg-red-500/10 text-red-400 hover:bg-red-500/20"
+                    : getFollowUpState(conversation) === "due_today"
+                    ? "border-amber-500/40 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
+                    : "border-primary/40 bg-primary/10 text-primary hover:bg-primary/20"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              title={conversation.follow_up_at ? `Follow-up: ${formatFollowUpLabel(conversation.follow_up_at)}` : "Schedule Follow-up"}
+            >
+              <Clock className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">
+                {conversation.follow_up_at && !conversation.follow_up_completed_at
+                  ? getFollowUpState(conversation) === "overdue"
+                    ? "Overdue"
+                    : getFollowUpState(conversation) === "due_today"
+                    ? "Due Today"
+                    : "Follow-up"
+                  : "Follow-up"}
+              </span>
+            </Button>
+          )}
+
+          {/* Create Deal button */}
+          {onCreateDeal && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onCreateDeal}
+              className="h-7 gap-1 px-2.5 text-xs font-heading font-semibold text-muted-foreground hover:border-primary/50 hover:text-primary hover:bg-primary/10 transition-all"
+            >
+              <Briefcase className="h-3.5 w-3.5 text-primary" />
+              <span className="hidden sm:inline">Create Deal</span>
+            </Button>
+          )}
           {/* Contact-panel toggle — desktop only. The contact sidebar
               eats a chunk of horizontal width that crowds the thread on
               smaller laptops; this lets agents reclaim it when they just

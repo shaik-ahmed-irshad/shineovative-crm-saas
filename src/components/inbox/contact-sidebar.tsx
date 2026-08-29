@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import type { Contact, Deal, ContactNote, Tag } from "@/types";
 import {
   Phone,
   Mail,

@@ -163,6 +163,8 @@ export function MessageThread({
   onUpdateMessage,
   onStatusChange,
   onAssignChange,
+  onScheduleFollowUp,
+  onCreateDeal,
   onBack,
   resyncToken = 0,
   onRefresh,

@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar, Clock, CheckCircle2, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { getPresetFollowUpTimes, formatFollowUpLabel } from "@/lib/inbox/followup-utils";
+import { getPresetFollowUpTimes } from "@/lib/inbox/followup-utils";
 
 interface FollowUpModalProps {
   open: boolean;
@@ -57,6 +57,7 @@ export function FollowUpModal({
   if (!conversation) return null;
 
   async function handleSave(dateToSave?: Date) {
+    if (!conversation) return;
     let targetIso: string | null = null;
     if (dateToSave) {
       targetIso = dateToSave.toISOString();
@@ -99,6 +100,7 @@ export function FollowUpModal({
   }
 
   async function handleComplete() {
+    if (!conversation) return;
     setSaving(true);
     try {
       const { data, error } = await supabase
@@ -124,6 +126,7 @@ export function FollowUpModal({
   }
 
   async function handleClear() {
+    if (!conversation) return;
     setSaving(true);
     try {
       const { data, error } = await supabase

@@ -46,7 +46,7 @@ const STATUS_COLORS: Record<ConversationStatus, string> = {
 
 import { useAuth } from "@/hooks/use-auth";
 import { getFollowUpState, formatFollowUpLabel } from "@/lib/inbox/followup-utils";
-import { Clock, Calendar } from "lucide-react";
+import { Clock } from "lucide-react";
 
 type InboxFilter =
   | "all"

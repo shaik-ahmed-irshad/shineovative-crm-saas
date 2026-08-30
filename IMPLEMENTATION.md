@@ -11,12 +11,12 @@
 | Item | Current state |
 |---|---|
 | **Overall completion** | **87%** |
-| **Current stage** | **Stage 5 complete — awaiting approval to begin Stage 6** |
-| **Current task** | Stage 5 WhatsApp + Core Regression Testing complete; awaiting approval to begin Stage 6 Shineovative Internal Release |
+| **Current stage** | **Stage 6 — Shineovative Internal Release** |
+| **Current task** | Stage 6 readiness audit, production documentation, and credential requirement checklist |
 | **Completed stages** | Stage 1 — Local Baseline (12%), Stage 2 — Shineovative Product Foundation (12%), Stage 3 — Complete UI/UX Redesign (30%), Stage 4 — High-Value CRM Workflow Features (18%), Stage 5 — WhatsApp + Core Regression Testing (15%) |
 | **Remaining stages** | Stages 6–7 (Stage 6: 8%, Stage 7: 5%) |
-| **Blockers/issues** | None. All 25 E2E browser scenarios, multi-tenant account isolation security audit, 80 unit test files (832 tests), lint, typecheck, production build, and migration 001-040 replay PASSED. Live Meta WABA test credentials documented as BLOCKED awaiting live Meta app secrets. |
-| **Last updated** | **2026-08-29 16:25 IST (+05:30)** |
+| **Blockers/issues** | No internal development blockers. External production dependency: live Meta WABA credentials/test number required for real WhatsApp production validation. |
+| **Last updated** | **2026-08-30 17:16 IST (+05:30)** |
 
 ### Tracking Markers
 
@@ -241,15 +241,15 @@ Before Stage 3 implementation begins, use a real browser/devtools or browser-cap
 
 # Decisions Requiring Owner Approval Before Implementation
 
-- `[!] D-001 Product display name:` Recommended working name **“Shineovative WhatsApp CRM”**. Approve or provide final product name.
-- `[!] D-002 Logo:` Confirm whether `/updated-assets/shinovative-logo.webp` is the correct current logo to use, or provide the preferred production logo files/variants.
-- `[!] D-003 Theme behavior:` Recommended: retain light/dark mode capability, but make brand accent(s) deployment-controlled rather than exposing five unrelated upstream accent themes by default. Approve.
-- `[!] D-004 Internal signup:` Recommended: disable/hide public self-signup for the internal Shineovative deployment and use owner/admin invitation flow. Approve.
-- `[!] D-005 Terminology:` Recommended UI labels:
+- `[x] D-001 Product display name:` Approved product name: **“Shineovative WhatsApp CRM”**.
+- `[x] D-002 Logo:` Approved logo: `/shineovative-assets/shinovative-logo.webp`.
+- `[x] D-003 Theme behavior:` Approved: Retained dark visual hierarchy with `#00b4ff` primary accent & `#f59e0b` secondary accent.
+- `[x] D-004 Internal signup:` Approved: Disabled public self-signup (`publicSignup: false`); invite-only administration flow.
+- `[x] D-005 Terminology:` Approved UI labels:
   - `Pipelines` → **Deals**
   - `Broadcasts` → **Campaigns**
   - `AI Agents` → **AI Assistant**
-  - Keep `Automations` and `Flows` as separate underlying routes, but group them under one logical **Automation** navigation section if the resulting UX is clearer.
+  - Grouped `Automations` and `Flows` under logical **Automation** navigation section.
 - `[!] D-006 Support details inside CRM:` Confirm whether public `info@shineovative.com` / `+91 9652006000` should appear in app help/support UI or only on client-facing deployments.
 - `[!] D-007 Default Stage 6 sales pipeline/tags:` Define with real Shineovative workflow before seeding production defaults; do not invent production stages without approval.
 
@@ -259,7 +259,7 @@ Before Stage 3 implementation begins, use a real browser/devtools or browser-cap
 
 **Goal:** Prove the unmodified upstream clone works locally and establish a written baseline so later failures can be attributed to our changes.
 
-**Stage status:** `[ ] Not started`
+**Stage status:** `[x] Completed`
 
 ## S1.1 — Verify Local Prerequisites and Repository State
 
@@ -897,7 +897,7 @@ Before Stage 3 implementation begins, use a real browser/devtools or browser-cap
 
 **Goal:** Produce a stable, practical internal instance for daily Shineovative usage.
 
-**Stage status:** `[ ] Not started`
+**Stage status:** `[~] In progress`
 
 ## S6.1 — Production Environment Checklist
 

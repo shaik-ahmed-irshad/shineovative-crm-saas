@@ -12,7 +12,7 @@
 |---|---|
 | **Overall completion** | **87%** |
 | **Current stage** | **Stage 6 — Shineovative Internal Release** |
-| **Current task** | Stage 6 readiness audit, production documentation, and credential requirement checklist |
+| **Current task** | Stage 6 — awaiting owner inputs and production environment configuration. |
 | **Completed stages** | Stage 1 — Local Baseline (12%), Stage 2 — Shineovative Product Foundation (12%), Stage 3 — Complete UI/UX Redesign (30%), Stage 4 — High-Value CRM Workflow Features (18%), Stage 5 — WhatsApp + Core Regression Testing (15%) |
 | **Remaining stages** | Stages 6–7 (Stage 6: 8%, Stage 7: 5%) |
 | **Blockers/issues** | No internal development blockers. External production dependency: live Meta WABA credentials/test number required for real WhatsApp production validation. |
@@ -1115,7 +1115,7 @@ Shineovative   Client A   Client B
 
 | ID | Area | Issue | Severity | Reproduction / evidence | Pre-existing? | Status |
 |---|---|---|---|---|---|---|
-| BASE-001 | Brand research | Exact live Shineovative CSS colors/fonts/radii/shadows/favicon were not exposed by the indexed text crawler used during planning. They must be captured from live DOM/CSS before Stage 3 implementation. | Attention | See **Shineovative Brand/UI Reference** | N/A planning dependency | `[!]` |
+| BASE-001 | Brand research | Exact live Shineovative CSS colors/fonts/radii/shadows/favicon were audited from `docs/shineovative-next.zip` and `public/shineovative-assets/`; exact design tokens integrated in Stage 3. | Resolved | See **Shineovative Brand/UI Reference** | N/A resolved | `[x]` Resolved |
 | BASE-002 | ESLint warnings | 37 minor pre-existing React Hook dependency array and unused variable warnings in frontend components during `npm run lint`. Zero errors. | Low | `npm run lint` | Yes (upstream) | `[x]` Baseline logged |
 | BASE-003 | Local Port Collision | Default Supabase ports (54321, 54322, 54323, 54324, 54327) collided with active local Docker containers (`drivana-platform`). Resolved by configuring `supabase/config.toml` ports to 54331-54337. | Resolved | `supabase/config.toml` | Yes (environment) | `[x]` Resolved |
 | BASE-004 | Security audit | Initial `npm ci` flagged 1 high severity vulnerability; full `npm audit` returned 0 vulnerabilities due to active `package.json` overrides for `postcss`, `hono`, `sharp`, `nanoid`. | Low | `npm audit` | Yes (upstream) | `[x]` Baseline logged |
@@ -1151,6 +1151,8 @@ Shineovative   Client A   Client B
 | 2026-08-28 11:55 IST | Stage 2 (S2.1-S2.4) | Created centralized brand & product configuration layer (`BRAND_CONFIG`, `PRODUCT_CONFIG`, `BrandLogo` component), updated layout metadata, sidebar terminology (`Deals`, `Campaigns`, `AI Assistant`), and public signup flag logic. | `src/config/brand.ts`, `src/config/product.ts`, `src/config/index.ts`, `src/components/brand/brand-logo.tsx`, `public/brand/logo.svg`, `src/app/layout.tsx`, `src/components/layout/sidebar.tsx`, `src/app/(auth)/login/page.tsx`, `src/app/(auth)/signup/page.tsx`, `messages/en.json`, `src/lib/themes.ts` | Typecheck, lint, test suite, production build, and route checks all passed. |
 | 2026-08-28 14:25 IST | Stage 3 (S3.15) | Completed full Shineovative UI/UX redesign. Configured Outfit font for headings, Inter for body/tables, cyan `#00b4ff` default theme accent, glass-card topbar and shell styling, redesigned MetricCard and QuickActions, and updated auth/AI Assistant screens. | `src/app/globals.css`, `src/lib/themes.ts`, `src/app/layout.tsx`, `src/components/layout/header.tsx`, `src/components/dashboard/metric-card.tsx`, `src/components/dashboard/quick-actions.tsx`, `src/app/(auth)/forgot-password/page.tsx`, `src/app/(dashboard)/agents/page.tsx` | Lint, typecheck, unit test suite (79 test files/825 tests), and Next.js production build all passed cleanly. |
 | 2026-08-29 14:05 IST | Stage 4 (S4.1-S4.4) | Implemented high-value CRM workflow features: 1) Follow-up/Snooze subsystem (`040_conversation_followups.sql`, `FollowUpModal`, follow-up status badges), 2) Conversation -> Deal integration (Create Deal trigger in thread topbar & contact sidebar pre-filling contact/conversation), 3) Enhanced Inbox Views (My Conversations, Unassigned, Unread, Needs Follow-up, Follow-up Overdue, Open, Pending, Closed). | `supabase/migrations/040_conversation_followups.sql`, `src/types/index.ts`, `src/lib/inbox/followup-utils.ts`, `src/lib/inbox/followup-utils.test.ts`, `src/components/inbox/followup-modal.tsx`, `src/components/inbox/conversation-list.tsx`, `src/components/inbox/message-thread.tsx`, `src/components/inbox/contact-sidebar.tsx`, `src/components/pipelines/deal-form.tsx`, `src/app/(dashboard)/inbox/page.tsx` | Replayed 40 migrations cleanly, 80 test files (832 unit tests) passed, lint, typecheck, production build, and automated Playwright browser QA passed 100%. |
+| 2026-08-30 02:53 IST | Stage 5 (S5.7) | Completed Stage 5 WhatsApp + Core Regression Testing, multi-tenant security isolation audit (Account A vs Account B 0 data leak), and reconciled IMPLEMENTATION.md tracker (`bea0b76`). | `docs/qa/stage-5/STAGE5_QA_REPORT.md`, `scratch/seed-stage5-multiaccount.js`, `scratch/run-stage5-qa.js` | Replayed 40 migrations cleanly, 80 test files (832 unit tests) passed, lint, typecheck, production build, and Playwright audit passed 100%. |
+| 2026-08-30 17:42 IST | Stage 6 (S6.1) | Completed Stage 6 pre-flight readiness audit, production environment template, deployment guide, smoke test checklist, and Shineovative business defaults (`f2404e4`). | `docs/deployment/PRODUCTION_ENV_TEMPLATE.md`, `docs/deployment/DEPLOYMENT_GUIDE.md`, `docs/deployment/PRODUCTION_SMOKE_TEST.md`, `docs/deployment/SHINEOVATIVE_DEFAULTS.md` | Documentation created and committed cleanly. |
 
 ---
 
@@ -1213,13 +1215,11 @@ Shineovative   Client A   Client B
 
 ---
 
-# Immediate Next Action After Approval
+# Immediate Next Action
 
-1. Await explicit user approval to begin **Stage 6 — Shineovative Internal Release**.
-2. Execute Stage 6 Pre-flight checklist:
-   - Configure production environment variables and service-role keys.
-   - Configure production `ENCRYPTION_KEY`.
-   - Setup live Meta WABA credentials and webhook endpoints.
-   - Run production health checks.
-
-**Do NOT begin Stage 6 until explicitly approved.**
+1. Stage 6 is **IN PROGRESS** `[~]`. Current state is awaiting owner business decisions and production credentials.
+2. Once production environment variables and owner business decisions are supplied:
+   - Apply production database migrations (`npx supabase db push`).
+   - Configure production environment variables (`SUPABASE_SERVICE_ROLE_KEY`, `ENCRYPTION_KEY`, `META_APP_SECRET`, `WHATSAPP_ACCESS_TOKEN`).
+   - Configure Meta Webhook endpoint (`https://crm.shineovative.com/api/whatsapp/webhook`).
+   - Execute post-deployment smoke test (`docs/deployment/PRODUCTION_SMOKE_TEST.md`).

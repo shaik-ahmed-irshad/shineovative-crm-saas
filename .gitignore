@@ -45,3 +45,5 @@ next-env.d.ts
 
 # scratch / temp extraction
 /scratch/
+supabase/.temp/
+

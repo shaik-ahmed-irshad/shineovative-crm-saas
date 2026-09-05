@@ -27,15 +27,25 @@ export async function POST(request: Request) {
     }
 
     const provider = body.provider as AiProvider
-    if (provider !== 'openai' && provider !== 'anthropic') {
+    if (
+      provider !== 'openai' &&
+      provider !== 'anthropic' &&
+      provider !== 'openrouter' &&
+      provider !== 'custom'
+    ) {
       return NextResponse.json(
-        { error: 'provider must be "openai" or "anthropic"' },
+        { error: 'provider must be "openai", "anthropic", "openrouter", or "custom"' },
         { status: 400 },
       )
     }
     const model = typeof body.model === 'string' ? body.model.trim() : ''
     if (!model) {
       return NextResponse.json({ error: 'model is required' }, { status: 400 })
+    }
+
+    const baseUrl = typeof body.base_url === 'string' ? body.base_url.trim() : null
+    if (provider === 'custom' && !baseUrl) {
+      return NextResponse.json({ error: 'Base URL is required for custom providers' }, { status: 400 })
     }
 
     const rawKey = typeof body.api_key === 'string' ? body.api_key.trim() : ''
@@ -73,6 +83,7 @@ export async function POST(request: Request) {
         autoReplyMaxPerConversation: 3,
         handoffAgentId: null,
         embeddingsApiKey: null,
+        baseUrl,
       })
     } catch (err) {
       if (err instanceof AiError) {

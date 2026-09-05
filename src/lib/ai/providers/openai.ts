@@ -24,12 +24,30 @@ interface OpenAiResponse {
  * Returns the raw assistant text + token usage (handoff parsing happens
  * in `generateReply`).
  */
-export async function generateOpenAi(args: ProviderArgs): Promise<ProviderResult> {
-  const { apiKey, model, systemPrompt, messages, timeoutMs } = args
+function resolveEndpointUrl(rawUrl?: string | null): string {
+  if (!rawUrl || !rawUrl.trim()) return OPENAI_URL
+  let url = rawUrl.trim().replace(/\/+$/, '')
+  if (!url.endsWith('/chat/completions')) {
+    if (url.endsWith('/v1')) {
+      url += '/chat/completions'
+    } else {
+      url += '/chat/completions'
+    }
+  }
+  return url
+}
+
+export async function generateOpenAi(
+  args: ProviderArgs,
+  customUrl?: string | null,
+): Promise<ProviderResult> {
+  const { apiKey, model, systemPrompt, messages, timeoutMs, baseUrl } = args
+
+  const url = resolveEndpointUrl(customUrl || baseUrl)
 
   let res: Response
   try {
-    res = await fetch(OPENAI_URL, {
+    res = await fetch(url, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -50,7 +68,8 @@ export async function generateOpenAi(args: ProviderArgs): Promise<ProviderResult
   }
 
   if (!res.ok) {
-    throw await providerHttpError('OpenAI', res)
+    const providerName = customUrl || baseUrl ? 'Custom Provider' : 'OpenAI'
+    throw await providerHttpError(providerName, res)
   }
 
   const data = (await res.json().catch(() => null)) as OpenAiResponse | null

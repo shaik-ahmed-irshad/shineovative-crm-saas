@@ -76,7 +76,7 @@ function aiConfig(overrides: Partial<AiConfig> = {}): AiConfig {
     autoReplyEnabled: true,
     autoReplyMaxPerConversation: 3,
     handoffAgentId: null,
-    embeddingsApiKey: null,
+    embeddingsApiKey: null, baseUrl: null,
     ...overrides,
   }
 }

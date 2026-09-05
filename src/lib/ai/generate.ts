@@ -31,6 +31,7 @@ export async function generateReply(args: GenerateArgs): Promise<GenerateResult>
     systemPrompt,
     messages,
     timeoutMs,
+    baseUrl: config.baseUrl,
   }
 
   let result: { text: string; usage: AiUsage | null }
@@ -40,6 +41,12 @@ export async function generateReply(args: GenerateArgs): Promise<GenerateResult>
       break
     case 'anthropic':
       result = await generateAnthropic(providerArgs)
+      break
+    case 'openrouter':
+      result = await generateOpenAi(providerArgs, 'https://openrouter.ai/api/v1/chat/completions')
+      break
+    case 'custom':
+      result = await generateOpenAi(providerArgs, config.baseUrl)
       break
     default:
       throw new AiError(`Unsupported AI provider: ${config.provider}`, {

@@ -23,12 +23,20 @@ jobs:
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
           script: |
             export PATH=/opt/alt/alt-nodejs22/root/usr/bin:$PATH
+            export NEXT_DISABLE_TURBOPACK=1
+            export UV_THREADPOOL_SIZE=4
+            export NODE_OPTIONS="--max-old-space-size=2048"
             cd ~/domains/solarcubic.in/public_html/crm || exit 1
             git pull origin main
-            npm install --production=false
-            npm run build
+            npm install --no-audit
+            /opt/alt/alt-nodejs22/root/usr/bin/node node_modules/next/dist/bin/next build
+            mkdir -p .next/standalone/.next
+            cp -r public .next/standalone/ 2>/dev/null || true
+            cp -r .next/static .next/standalone/.next/ 2>/dev/null || true
             if command -v pm2 >/dev/null 2>&1; then
               pm2 restart crm || pm2 start .next/standalone/server.js --name "crm"
             else
               touch tmp/restart.txt 2>/dev/null || true
             fi
+
+

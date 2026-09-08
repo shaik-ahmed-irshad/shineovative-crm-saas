@@ -1,126 +1,183 @@
-# Shineovative WhatsApp CRM SaaS — Billing, Subscriptions & Quota Specification
+# Shineovative WhatsApp CRM SaaS — Billing & Unified Payment Specification
 
-## 1. Overview
+## 1. Overview & Philosophy
 
-This document specifies the monetization engine, pricing tiers, payment gateway integration, and automated quota enforcement for the Shineovative WhatsApp CRM SaaS.
+To deliver the best customer experience with zero friction, the Shineovative WhatsApp CRM SaaS adopts a **Simple Single Subscription Model**. 
 
----
+Instead of confusing tiers (Starter, Growth, Enterprise, Pro), customers pay a single, straightforward fee for **complete, unlimited access** to the CRM platform. Customers can choose between **Monthly** or **Annual (with discount)** billing cycles.
 
-## 2. Pricing Tiers & Feature Matrix
-
-| Feature / Limit | Free Trial (14 Days) | Starter Plan | Growth Plan | Enterprise Plan |
-|---|:---:|:---:|:---:|:---:|
-| **Target Audience** | Evaluation | Small Teams & Startups | Growing SMBs | High-Volume Enterprises |
-| **Team Seats (Members)** | Up to 2 | Up to 5 | Up to 15 | Unlimited |
-| **Contacts Limit** | 500 | 2,500 | 25,000 | Custom / 100,000+ |
-| **Monthly WhatsApp Campaigns** | 3 campaigns | 15 campaigns | 100 campaigns | Unlimited |
-| **Active Sales Pipelines** | 1 pipeline | 3 pipelines | 10 pipelines | Unlimited |
-| **No-Code Automations & Flows** | 3 active | 10 active | Unlimited | Unlimited |
-| **AI Assistant** | BYO Key | BYO Key | 250k AI tokens included | 1M AI tokens included |
-| **Audit Logs Retention** | 7 days | 30 days | 90 days | 1 year |
+To serve both domestic (India) and international customers seamlessly, the platform utilizes a **Unified Billing Adapter** architecture supporting **Razorpay** (India: UPI, NetBanking, Cards in INR) and **Stripe** (International: Global Cards, Multi-currency, Apple Pay/Google Pay).
 
 ---
 
-## 3. Database Schema: Billing & Subscriptions
+## 2. The Single Subscription Plan
+
+### Pricing Structure
+- **Monthly Billing**: ₹2,999 / month (Domestic INR) or $39 / month (International USD).
+- **Annual Billing (20% Discount)**: ₹28,790 / year (₹2,399/mo) or $375 / year ($31/mo).
+- **Free Trial**: 14-day fully featured free trial upon registration (no credit card required upfront).
+
+### Included Features (All-In-One Access)
+- **Unlimited Team Members & Seats** (No per-seat penalty).
+- **Unlimited Contacts & Leads**.
+- **Official WhatsApp Business API (WABA) Integration** (Cloud API direct connection).
+- **Unlimited Pipelines & Custom Stages**.
+- **Full Automation Workflows & Triggers**.
+- **Team Inbox & Real-time Live Chat**.
+- **Custom Tags, Quick Replies, and Media Management**.
+- **Full Analytics, Export, and Audit Logs**.
+- **AI Assistant**: Bring-Your-Own-Key (BYO-Key for OpenAI/OpenRouter/Anthropic) with optional platform credits.
+
+---
+
+## 3. Unified Billing Adapter Architecture
+
+The backend implements an abstract provider interface `BillingProvider`. The platform automatically selects the appropriate provider based on the customer's region/currency or allows manual toggling:
+
+```
+                      ┌─────────────────────────────────┐
+                      │    Unified Billing Controller    │
+                      │     (/api/billing/checkout)     │
+                      └────────────────┬────────────────┘
+                                       │
+                    ┌──────────────────┴──────────────────┐
+                    │                                     │
+           [Currency == 'INR']                   [Currency == 'USD']
+                    │                                     │
+                    ▼                                     ▼
+        ┌───────────────────────┐             ┌───────────────────────┐
+        │   Razorpay Provider   │             │    Stripe Provider    │
+        │   - UPI (GPay/PhonePe)│             │   - Global Cards      │
+        │   - Domestic Cards    │             │   - Apple Pay / GPay  │
+        │   - NetBanking        │             │   - Multi-Currency    │
+        └───────────┬───────────┘             └───────────┬───────────┘
+                    │                                     │
+                    └──────────────────┬──────────────────┘
+                                       │
+                                       ▼
+                      ┌─────────────────────────────────┐
+                      │    Unified Webhook Dispatcher   │
+                      │     (/api/webhooks/billing)     │
+                      └────────────────┬────────────────┘
+                                       │
+                                       ▼
+                      ┌─────────────────────────────────┐
+                      │  PostgreSQL: subscriptions row  │
+                      │  accounts.status = 'active'     │
+                      └─────────────────────────────────┘
+```
+
+### TypeScript Adapter Interface
+
+```typescript
+// src/lib/billing/types.ts
+
+export type BillingGateway = 'stripe' | 'razorpay';
+export type BillingCycle = 'monthly' | 'annual';
+export type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'cancelled' | 'unpaid';
+
+export interface CreateCheckoutSessionParams {
+  accountId: string;
+  customerEmail: string;
+  customerName: string;
+  billingCycle: BillingCycle;
+  currency: 'INR' | 'USD';
+  successUrl: string;
+  cancelUrl: string;
+}
+
+export interface CheckoutSessionResult {
+  gateway: BillingGateway;
+  sessionId: string;
+  checkoutUrl?: string; // For Stripe Hosted Checkout
+  razorpayOrderId?: string; // For Razorpay Checkout Modal
+  razorpayKeyId?: string;
+  amount: number;
+  currency: string;
+}
+
+export interface BillingProvider {
+  createCustomer(accountId: string, email: string, name: string): Promise<string>;
+  createCheckoutSession(params: CreateCheckoutSessionParams): Promise<CheckoutSessionResult>;
+  cancelSubscription(subscriptionId: string): Promise<boolean>;
+  getSubscription(subscriptionId: string): Promise<{
+    status: SubscriptionStatus;
+    currentPeriodEnd: Date;
+    cancelAtPeriodEnd: boolean;
+  }>;
+  verifyWebhookSignature(payload: string | Buffer, signature: string): boolean;
+}
+```
+
+---
+
+## 4. Database Schema: Subscriptions & Billing
 
 ```sql
--- 1. Available Pricing Plans
-CREATE TABLE IF NOT EXISTS public.plans (
-  id TEXT PRIMARY KEY,                       -- e.g. 'plan_starter', 'plan_growth', 'plan_enterprise'
-  name TEXT NOT NULL,                        -- e.g. 'Starter Plan'
-  description TEXT,
-  price_monthly_inr INTEGER NOT NULL,        -- Amount in paise / INR cents
-  price_monthly_usd INTEGER NOT NULL,        -- Amount in USD cents
-  max_members INTEGER NOT NULL DEFAULT 5,
-  max_contacts INTEGER NOT NULL DEFAULT 2500,
-  max_campaigns_per_month INTEGER NOT NULL DEFAULT 15,
-  max_pipelines INTEGER NOT NULL DEFAULT 3,
-  ai_tokens_included INTEGER NOT NULL DEFAULT 0,
-  is_active BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 2. Tenant Subscriptions
+-- 1. Unified Subscriptions Table
 CREATE TABLE IF NOT EXISTS public.subscriptions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id UUID NOT NULL UNIQUE REFERENCES public.accounts(id) ON DELETE CASCADE,
-  plan_id TEXT NOT NULL REFERENCES public.plans(id),
   gateway TEXT NOT NULL CHECK (gateway IN ('stripe', 'razorpay')),
-  customer_id TEXT NOT NULL,                 -- Stripe/Razorpay Customer ID
-  subscription_id TEXT NOT NULL,             -- Stripe/Razorpay Subscription ID
+  customer_id TEXT NOT NULL,                 -- Stripe Customer ID or Razorpay Customer ID
+  subscription_id TEXT NOT NULL,             -- Stripe / Razorpay Subscription ID
+  plan_code TEXT NOT NULL DEFAULT 'all_in_one',
+  billing_cycle TEXT NOT NULL CHECK (billing_cycle IN ('monthly', 'annual')),
+  currency TEXT NOT NULL CHECK (currency IN ('INR', 'USD')),
   status TEXT NOT NULL CHECK (status IN ('trialing', 'active', 'past_due', 'cancelled', 'unpaid')),
   current_period_start TIMESTAMPTZ NOT NULL,
   current_period_end TIMESTAMPTZ NOT NULL,
+  trial_ends_at TIMESTAMPTZ,
   cancel_at_period_end BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. Monthly Usage Tracking
-CREATE TABLE IF NOT EXISTS public.tenant_monthly_usage (
+-- Index for fast status checks
+CREATE INDEX IF NOT EXISTS idx_subscriptions_account_status 
+ON public.subscriptions(account_id, status);
+
+-- 2. Payment Invoices History
+CREATE TABLE IF NOT EXISTS public.billing_invoices (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id UUID NOT NULL REFERENCES public.accounts(id) ON DELETE CASCADE,
-  billing_month DATE NOT NULL,              -- Truncated to 1st of current month
-  campaigns_sent INTEGER DEFAULT 0,
-  outbound_messages_sent INTEGER DEFAULT 0,
-  ai_tokens_consumed INTEGER DEFAULT 0,
-  UNIQUE(account_id, billing_month)
+  gateway TEXT NOT NULL CHECK (gateway IN ('stripe', 'razorpay')),
+  invoice_id TEXT NOT NULL,
+  amount_paid INTEGER NOT NULL,              -- in smallest currency unit (paise or cents)
+  currency TEXT NOT NULL,
+  receipt_url TEXT,
+  paid_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- 3. Update accounts status check
+ALTER TABLE public.accounts 
+ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'trialing' 
+CHECK (status IN ('trialing', 'active', 'past_due', 'suspended', 'cancelled'));
 ```
 
 ---
 
-## 4. Webhook Lifecycle State Machine
+## 5. Webhook Lifecycle State Machine
 
-The billing webhook handler (`/api/webhooks/billing`) processes incoming payment gateway events:
+Both Stripe and Razorpay webhooks feed into the unified billing state machine:
 
-```text
-[ Gateway Event ]
-        │
-        ├── subscription.created / checkout.completed
-        │     └── Insert subscription row, update accounts.status = 'active', set accounts.plan_tier
-        │
-        ├── invoice.paid
-        │     └── Update current_period_end, reset monthly usage counters
-        │
-        ├── invoice.payment_failed
-        │     └── Update status = 'past_due', dispatch warning email, grant 3-day grace period
-        │
-        └── subscription.cancelled / subscription.deleted
-              └── Update status = 'cancelled', downgrade account features, notify owner
-```
+| Event Type (Stripe / Razorpay) | State Action | Platform Behavior |
+|---|---|---|
+| `checkout.session.completed` / `subscription.authenticated` | Status → `active` | Organization status set to `active`. Owner notified with welcome receipt. |
+| `invoice.paid` / `subscription.charged` | Extend `current_period_end` | Period extended by 1 month or 1 year. Receipt saved to `billing_invoices`. |
+| `invoice.payment_failed` / `payment.failed` | Status → `past_due` | Account granted 3-day grace period. In-app warning banner displayed to owner. |
+| `customer.subscription.deleted` / `subscription.cancelled` | Status → `cancelled` | Account access restricted to read-only export mode until reactivated. |
 
 ---
 
-## 5. Automated Quota Enforcement Engine
+## 6. Access Enforcement Logic (Simple & Clean)
 
-Before performing resource-restricted actions, the application verifies the tenant's current usage against their plan limits:
+Because there are no complex feature tiers to meter, access enforcement is clean and binary:
 
-### Seat / Member Enforcement
-```typescript
-// src/lib/billing/quota-guard.ts
-export async function assertCanAddMember(accountId: string): Promise<void> {
-  const { currentCount, maxAllowed } = await getMemberQuota(accountId);
-  if (currentCount >= maxAllowed) {
-    throw new QuotaExceededError(
-      `Your organization has reached its limit of ${maxAllowed} members. Please upgrade your plan.`
-    );
-  }
-}
-```
-
-### Contact Limit Enforcement
-```typescript
-export async function assertCanAddContacts(accountId: string, incomingCount: number = 1): Promise<void> {
-  const { currentCount, maxAllowed } = await getContactQuota(accountId);
-  if (currentCount + incomingCount > maxAllowed) {
-    throw new QuotaExceededError(
-      `Adding ${incomingCount} contacts would exceed your plan limit of ${maxAllowed} contacts.`
-    );
-  }
-}
-```
-
-### UI Quota Banners
-- When usage reaches **80%** of a plan quota, display an informative banner with an **Upgrade Plan** action.
-- When usage reaches **100%**, disable the creation trigger button (e.g. `New Contact`, `Invite Member`, `Send Campaign`) and open the plan upgrade dialog.
+1. **Active / Trialing Account**:
+   - Full read/write access to all CRM routes, WhatsApp messaging, and automations.
+2. **Past Due (Grace Period - Day 1 to 3)**:
+   - Full access maintained. Persistent reminder banner displayed in dashboard.
+3. **Past Due (Expired - Day 4+) or Cancelled**:
+   - Read-only access enabled: Can view conversations, contacts, and export data.
+   - Outbound WhatsApp sending and automated campaigns blocked with modal: *"Please update your payment method to resume messaging."*

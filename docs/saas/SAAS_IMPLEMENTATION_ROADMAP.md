@@ -65,24 +65,24 @@
   - [ ] Global Metrics Dashboard:
     - Total Organizations, Active Users, Daily Outbound Messages, AI token consumption across the platform.
 
-### Milestone 4: Billing, Plans & Automated Quota Enforcement (20%)
-- **Objective:** Monetize the platform via recurring subscriptions and automatically restrict features when quotas are reached.
+### Milestone 4: Single Subscription & Unified Billing Engine (Razorpay + Stripe) (20%)
+- **Objective:** Monetize the platform via a simple, single all-in-one subscription with monthly/annual options using a unified billing adapter supporting Razorpay (India) and Stripe (Global).
 - **Key Deliverables:**
   - [ ] Migration `102_saas_billing_and_subscriptions.sql`:
-    - `plans` table (Starter, Growth, Enterprise).
-    - `subscriptions` table (Stripe / Razorpay customer ID, subscription ID, status, current period end).
-    - Quota definition: `max_members`, `max_contacts`, `max_campaigns_per_month`, `max_ai_tokens`.
-  - [ ] Payment Gateway Integration:
-    - Checkout session creation (Customer portal & subscription initiation).
-    - Robust Webhook Handler (`/api/webhooks/billing`):
-      - `subscription.created` → Activate account plan.
-      - `invoice.paid` → Reset monthly counters and extend period.
-      - `invoice.payment_failed` → Mark account as `past_due`.
-      - `subscription.deleted` → Downgrade to Free / Suspend account.
-  - [ ] Quota Guards in Application:
-    - Prevent adding members when `member_count >= plan.max_members`.
-    - Prevent contact creation/import when `contact_count >= plan.max_contacts`.
-    - Display upgrade prompts in UI when approaching limits.
+    - `subscriptions` table (Unified schema for Stripe & Razorpay customer/subscription IDs, status, billing cycle, current period end).
+    - `billing_invoices` table for receipt tracking and invoice history.
+    - Simplified account status flags (`trialing`, `active`, `past_due`, `cancelled`).
+  - [ ] Unified Billing Adapter Architecture:
+    - Provider abstraction (`src/lib/billing/types.ts` & `providers/`):
+      - `RazorpayProvider`: UPI (Google Pay, PhonePe), Domestic Cards, NetBanking (INR).
+      - `StripeProvider`: Global Cards, Apple Pay, Google Pay, Multi-currency (USD).
+    - Auto-selection based on customer currency/region.
+  - [ ] Unified Webhook Handler (`/api/webhooks/billing`):
+    - Cryptographic signature validation for both Stripe (`stripe-signature`) and Razorpay (`x-razorpay-signature`).
+    - State machine: `subscription.created` → activate; `invoice.paid` → extend period; `invoice.payment_failed` → grace period; `subscription.cancelled` → read-only mode.
+  - [ ] Access & Subscription Status Enforcement:
+    - Clean binary access model: Active/Trial (full access) vs. Past Due / Cancelled (read-only export mode).
+    - In-app payment reminders and billing management portal.
 
 ### Milestone 5: Multi-Tenant WhatsApp Business API (WABA) Onboarding (15%)
 - **Objective:** Enable multiple independent organizations to connect their own official WhatsApp Business numbers seamlessly.

@@ -31,7 +31,6 @@
   "scripts": {
     "dev": "next dev",
     "build": "NEXT_DISABLE_TURBOPACK=1 UV_THREADPOOL_SIZE=4 next build",
-
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
@@ -73,6 +72,7 @@
     "eslint-config-next": "16.2.12",
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.8.1",
+    "puppeteer-core": "^25.10.0",
     "tailwindcss": "^4",
     "typescript": "^6",
     "vitest": "^4.1.10"

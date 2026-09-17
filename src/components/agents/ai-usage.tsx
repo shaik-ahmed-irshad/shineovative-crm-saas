@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { BarChart3, Bot, PencilLine } from 'lucide-react';
+import { AlertCircle, BarChart3, Bot, KeyRound, PencilLine, Sparkles } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { canEditSettings } from '@/lib/auth/roles';
+import { Badge } from '@/components/ui/badge';
+import type { AiQuotaStatus } from '@/lib/ai/quota';
 import {
   Card,
   CardContent,
@@ -60,21 +62,31 @@ export function AiUsageCard() {
   const [days, setDays] = useState<number>(30);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<UsageResponse | null>(null);
+  const [quotaData, setQuotaData] = useState<AiQuotaStatus | null>(null);
   const loadedRef = useRef<string | null>(null);
 
   const fetchUsage = useCallback(async (windowDays: number) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/ai/usage?days=${windowDays}`, {
-        cache: 'no-store',
-      });
+      const [res, quotaRes] = await Promise.all([
+        fetch(`/api/ai/usage?days=${windowDays}`, { cache: 'no-store' }),
+        fetch('/api/ai/quota', { cache: 'no-store' }),
+      ]);
+
       const json = await res.json().catch(() => null);
       if (!res.ok) {
         toast.error(json?.error ?? 'Failed to load usage');
         setData(null);
-        return;
+      } else {
+        setData(json as UsageResponse);
       }
-      setData(json as UsageResponse);
+
+      if (quotaRes.ok) {
+        const qJson = await quotaRes.json().catch(() => null);
+        if (qJson?.quota) {
+          setQuotaData(qJson.quota as AiQuotaStatus);
+        }
+      }
     } catch {
       toast.error('Failed to load usage');
       setData(null);
@@ -130,6 +142,66 @@ export function AiUsageCard() {
         </div>
       </CardHeader>
       <CardContent className="space-y-5">
+        {quotaData && (
+          <div className="rounded-lg border border-border bg-muted/40 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {quotaData.hasByoKey ? (
+                  <Badge variant="secondary" className="gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                    <KeyRound className="h-3 w-3" /> BYO Key Active — Unlimited
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="gap-1">
+                    <Sparkles className="h-3 w-3 text-primary" /> Monthly Complimentary Allowance
+                  </Badge>
+                )}
+              </div>
+              <span className="text-xs text-muted-foreground">
+                Resets {format(parseISO(quotaData.resetsAt), 'MMM d, yyyy')}
+              </span>
+            </div>
+
+            {quotaData.hasByoKey ? (
+              <p className="text-xs text-muted-foreground">
+                Your custom provider API key is active. Token consumption is billed directly by your LLM provider with unlimited platform throughput.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-medium">
+                  <span className="text-muted-foreground">
+                    {formatCompactNumber(quotaData.monthlyUsed)} of {formatCompactNumber(quotaData.monthlyQuota || 50000)} tokens used this month
+                  </span>
+                  <span className={quotaData.allowed ? "text-emerald-600 dark:text-emerald-400 font-semibold" : "text-destructive font-semibold"}>
+                    {formatCompactNumber(quotaData.remaining ?? 0)} tokens remaining
+                  </span>
+                </div>
+                <div className="h-2 w-full rounded-full bg-secondary overflow-hidden">
+                  <div
+                    className={`h-full transition-all rounded-full ${
+                      (quotaData.remaining ?? 0) <= 0
+                        ? "bg-destructive"
+                        : (quotaData.remaining ?? 0) < 10000
+                        ? "bg-amber-500"
+                        : "bg-primary"
+                    }`}
+                    style={{
+                      width: `${Math.min(100, Math.round((quotaData.monthlyUsed / (quotaData.monthlyQuota || 50000)) * 100))}%`,
+                    }}
+                  />
+                </div>
+                {!quotaData.allowed && (
+                  <div className="flex items-center gap-1.5 text-xs text-destructive mt-1">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                    <span>
+                      Monthly allowance exhausted. Configure a custom API key in the Agent Settings tab to continue automated responses.
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {loading || !data ? (
           <Skeleton className="h-[220px] w-full" />
         ) : !hasSpend ? (

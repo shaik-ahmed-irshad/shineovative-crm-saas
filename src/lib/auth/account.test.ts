@@ -66,9 +66,14 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: () => createClient(),
 }));
 
-const { getCurrentAccount, UnauthorizedError, ForbiddenError } = await import(
-  "./account"
-);
+const {
+  getCurrentAccount,
+  requireRole,
+  requireSuperAdmin,
+  requirePlatformSupport,
+  UnauthorizedError,
+  ForbiddenError,
+} = await import("./account");
 
 afterEach(() => {
   vi.clearAllMocks();
@@ -173,4 +178,82 @@ describe("getCurrentAccount", () => {
       "Profile is not linked to an account",
     );
   });
+
+  it("extracts platform_role and account metadata properly", async () => {
+    const { client } = makeClient({
+      user: { id: "user-super" },
+      byTable: {
+        profiles: {
+          data: {
+            account_id: "acct-1",
+            account_role: "owner",
+            platform_role: "super_admin",
+          },
+          error: null,
+        },
+        accounts: {
+          data: {
+            id: "acct-1",
+            name: "Shineovative",
+            slug: "shineovative",
+            status: "active",
+            plan_tier: "all_in_one",
+          },
+          error: null,
+        },
+      },
+    });
+    createClient.mockReturnValue(client);
+
+    const ctx = await getCurrentAccount();
+    expect(ctx.platformRole).toBe("super_admin");
+    expect(ctx.account.slug).toBe("shineovative");
+    expect(ctx.account.status).toBe("active");
+  });
 });
+
+describe("requireSuperAdmin", () => {
+  it("succeeds when user has super_admin platform_role", async () => {
+    const { client } = makeClient({
+      user: { id: "user-super" },
+      byTable: {
+        profiles: {
+          data: {
+            account_id: "acct-1",
+            account_role: "admin",
+            platform_role: "super_admin",
+          },
+          error: null,
+        },
+        accounts: { data: { id: "acct-1", name: "Admin Org" }, error: null },
+      },
+    });
+    createClient.mockReturnValue(client);
+
+    const ctx = await requireSuperAdmin();
+    expect(ctx.platformRole).toBe("super_admin");
+  });
+
+  it("throws ForbiddenError when user is not super_admin", async () => {
+    const { client } = makeClient({
+      user: { id: "user-regular" },
+      byTable: {
+        profiles: {
+          data: {
+            account_id: "acct-1",
+            account_role: "owner",
+            platform_role: "none",
+          },
+          error: null,
+        },
+        accounts: { data: { id: "acct-1", name: "Regular Org" }, error: null },
+      },
+    });
+    createClient.mockReturnValue(client);
+
+    await expect(requireSuperAdmin()).rejects.toThrow(
+      "Platform super-admin access required",
+    );
+  });
+});
+

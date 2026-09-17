@@ -10,9 +10,9 @@ export const PRODUCT_CONFIG = {
   features: {
     /**
      * Whether public self-signup (/signup) is enabled.
-     * Default: false for Shineovative internal deployment (favoring team invitations).
+     * True for SaaS multi-tenant self-service registrations.
      */
-    publicSignup: false,
+    publicSignup: true,
     /** Whether AI Assistant capabilities are enabled */
     aiAssistant: true,
     /** Whether Campaigns (broadcasts) are enabled */

@@ -42,6 +42,53 @@ BEGIN
     RAISE EXCEPTION 'public.accounts is missing — migration 017 did not apply';
   END IF;
 
+  -- Milestone 1 (101): Multi-tenancy, platform roles, account_members, saas_audit_logs
+  IF to_regclass('public.account_members') IS NULL THEN
+    RAISE EXCEPTION 'public.account_members is missing — migration 101 did not apply';
+  END IF;
+
+  IF to_regclass('public.saas_audit_logs') IS NULL THEN
+    RAISE EXCEPTION 'public.saas_audit_logs is missing — migration 101 did not apply';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'platform_role'
+  ) THEN
+    RAISE EXCEPTION 'profiles.platform_role is missing — migration 101 did not apply';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'accounts' AND column_name = 'slug'
+  ) THEN
+    RAISE EXCEPTION 'accounts.slug is missing — migration 101 did not apply';
+  END IF;
+
+  -- Milestone 2 (102): Tenant bootstrap & onboarding columns
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'accounts' AND column_name = 'timezone'
+  ) THEN
+    RAISE EXCEPTION 'accounts.timezone is missing — migration 102 did not apply';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'accounts' AND column_name = 'onboarding_completed_at'
+  ) THEN
+    RAISE EXCEPTION 'accounts.onboarding_completed_at is missing — migration 102 did not apply';
+  END IF;
+
+  -- Milestone 4 (103): Subscriptions and unified billing invoices
+  IF to_regclass('public.subscriptions') IS NULL THEN
+    RAISE EXCEPTION 'public.subscriptions is missing — migration 103 did not apply';
+  END IF;
+
+  IF to_regclass('public.billing_invoices') IS NULL THEN
+    RAISE EXCEPTION 'public.billing_invoices is missing — migration 103 did not apply';
+  END IF;
+
   RAISE NOTICE 'schema verification passed';
 END
 $$;

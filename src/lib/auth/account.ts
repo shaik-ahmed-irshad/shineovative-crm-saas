@@ -29,7 +29,15 @@ import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/server";
-import { hasMinRole, isAccountRole, type AccountRole } from "./roles";
+import {
+  hasMinRole,
+  isAccountRole,
+  isPlatformRole,
+  isPlatformSupport,
+  isSuperAdmin,
+  type AccountRole,
+  type PlatformRole,
+} from "./roles";
 
 // ------------------------------------------------------------
 // Errors
@@ -54,6 +62,14 @@ export class ForbiddenError extends Error {
   }
 }
 
+export class PaymentRequiredError extends Error {
+  readonly status = 402 as const;
+  constructor(message = "Payment or active subscription required") {
+    super(message);
+    this.name = "PaymentRequiredError";
+  }
+}
+
 /**
  * Convert one of the typed errors above (or anything else) into a
  * `NextResponse`. Routes can do:
@@ -67,7 +83,11 @@ export class ForbiddenError extends Error {
  * server internals out of the wire.
  */
 export function toErrorResponse(err: unknown): NextResponse {
-  if (err instanceof UnauthorizedError || err instanceof ForbiddenError) {
+  if (
+    err instanceof UnauthorizedError ||
+    err instanceof ForbiddenError ||
+    err instanceof PaymentRequiredError
+  ) {
     return NextResponse.json({ error: err.message }, { status: err.status });
   }
   console.error("[toErrorResponse] uncategorized error:", err);
@@ -87,8 +107,16 @@ export interface AccountContext {
   accountId: string;
   /** Caller's role within their account. */
   role: AccountRole;
-  /** Lightweight account meta — id + name. */
-  account: { id: string; name: string };
+  /** Platform-wide SaaS role ('super_admin' | 'support' | 'none'). */
+  platformRole: PlatformRole;
+  /** Lightweight account meta — id + name (+ slug, status, planTier). */
+  account: {
+    id: string;
+    name: string;
+    slug?: string;
+    status?: string;
+    planTier?: string;
+  };
 }
 
 /**
@@ -116,7 +144,7 @@ export async function getCurrentAccount(): Promise<AccountContext> {
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("account_id, account_role")
+    .select("account_id, account_role, platform_role")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -137,19 +165,15 @@ export async function getCurrentAccount(): Promise<AccountContext> {
     throw new ForbiddenError(`Unknown account role: ${data.account_role}`);
   }
 
+  const platformRole: PlatformRole = isPlatformRole(data.platform_role)
+    ? data.platform_role
+    : "none";
+
   // Load the account with a plain point lookup by id rather than an
-  // embedded FK join (`account:accounts!inner(...)`). The embed forces
-  // PostgREST to resolve the profiles.account_id → accounts.id
-  // relationship from its schema cache; when that cache is stale — a
-  // common Supabase state right after a migration adds the FK, or when
-  // migrations are applied out of band — the embed fails hard with
-  // PGRST200 ("could not find a relationship … in the schema cache")
-  // and takes down the entire account context (issue #294). A lookup by
-  // id needs no relationship inference and is gated by the same accounts
-  // RLS, so it stays robust against cache staleness and older schemas.
+  // embedded FK join (`account:accounts!inner(...)`).
   const { data: account, error: accountErr } = await supabase
     .from("accounts")
-    .select("id, name")
+    .select("id, name, slug, status, plan_tier")
     .eq("id", data.account_id)
     .maybeSingle();
 
@@ -168,7 +192,14 @@ export async function getCurrentAccount(): Promise<AccountContext> {
     userId: user.id,
     accountId: data.account_id,
     role: data.account_role,
-    account: { id: account.id, name: account.name },
+    platformRole,
+    account: {
+      id: account.id,
+      name: account.name,
+      slug: account.slug,
+      status: account.status,
+      planTier: account.plan_tier,
+    },
   };
 }
 
@@ -188,3 +219,50 @@ export async function requireRole(min: AccountRole): Promise<AccountContext> {
   }
   return ctx;
 }
+
+/**
+ * Resolve the caller's account context and verify Platform Super Admin role.
+ *
+ * Throws `ForbiddenError("Platform super-admin access required")` if
+ * `platform_role !== 'super_admin'`.
+ */
+export async function requireSuperAdmin(): Promise<AccountContext> {
+  const ctx = await getCurrentAccount();
+  if (!isSuperAdmin(ctx.platformRole)) {
+    throw new ForbiddenError("Platform super-admin access required");
+  }
+  return ctx;
+}
+
+/**
+ * Resolve the caller's account context and verify Platform Support or Super Admin role.
+ */
+export async function requirePlatformSupport(): Promise<AccountContext> {
+  const ctx = await getCurrentAccount();
+  if (!isPlatformSupport(ctx.platformRole)) {
+    throw new ForbiddenError("Platform administrative access required");
+  }
+  return ctx;
+}
+
+/**
+ * Verify that the tenant organization has an active or trialing subscription.
+ *
+ * Throws ForbiddenError if the organization is suspended.
+ * Throws PaymentRequiredError (402) if the subscription is cancelled.
+ */
+export function requireActiveSubscription(ctx: AccountContext): void {
+  const status = ctx.account.status;
+  if (status === "suspended") {
+    throw new ForbiddenError(
+      "Your organization account has been suspended by platform administration. Please contact support.",
+    );
+  }
+  if (status === "cancelled") {
+    throw new PaymentRequiredError(
+      "Your subscription is cancelled or inactive. Please renew your plan to send messages.",
+    );
+  }
+}
+
+

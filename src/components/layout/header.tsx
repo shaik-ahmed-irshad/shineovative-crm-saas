@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
-import { LogOut, Menu, Settings as SettingsIcon, User } from "lucide-react";
+import { LogOut, Menu, Settings as SettingsIcon, User, ShieldCheck } from "lucide-react";
 import {
   Avatar,
   AvatarFallback,
@@ -48,7 +48,7 @@ import { useTranslations } from "next-intl";
 export function Header({ onOpenSidebar }: HeaderProps) {
   const t = useTranslations("Header");
   const pathname = usePathname();
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, isSuperAdmin } = useAuth();
   const titleKey = getPageTitleKey(pathname);
 
   const initial =
@@ -110,6 +110,22 @@ export function Header({ onOpenSidebar }: HeaderProps) {
             </p>
           </div>
           <DropdownMenuSeparator className="bg-border" />
+          {isSuperAdmin && (
+            <>
+              <DropdownMenuItem
+                render={
+                  <Link
+                    href="/super-admin"
+                    className="text-purple-400 font-medium focus:bg-purple-500/10 focus:text-purple-300"
+                  />
+                }
+              >
+                <ShieldCheck className="size-4 text-purple-400" />
+                Super Admin Portal
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-border" />
+            </>
+          )}
           <DropdownMenuItem
             render={
               <Link

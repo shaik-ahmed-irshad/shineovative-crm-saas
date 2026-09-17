@@ -245,18 +245,17 @@ async function processWebhook(body: { entry?: WhatsAppWebhookEntry[] }) {
       }
 
       const value = change.value
+      const phoneNumberId = value.metadata?.phone_number_id
 
       // Handle status updates
       if (value.statuses) {
         for (const status of value.statuses) {
-          await handleStatusUpdate(status)
+          await handleStatusUpdate(status, phoneNumberId)
         }
       }
 
       // Handle incoming messages
       if (!value.messages || !value.contacts) continue
-
-      const phoneNumberId = value.metadata.phone_number_id
 
       // Find user's config by phone_number_id. `.single()` returns
       // PGRST116 for both 0 rows AND ≥2 rows — distinguish them so
@@ -364,21 +363,39 @@ function isValidStatusTransition(current: string, incoming: string): boolean {
   return ii > ci
 }
 
-async function handleStatusUpdate(status: {
-  id: string
-  status: string
-  timestamp: string
-  recipient_id: string
-}) {
+async function handleStatusUpdate(
+  status: {
+    id: string
+    status: string
+    timestamp: string
+    recipient_id: string
+  },
+  phoneNumberId?: string,
+) {
+  let scopedAccountId: string | null = null
+  if (phoneNumberId) {
+    const { data: cfg } = await supabaseAdmin()
+      .from('whatsapp_config')
+      .select('account_id')
+      .eq('phone_number_id', phoneNumberId)
+      .maybeSingle()
+    scopedAccountId = cfg?.account_id ?? null
+  }
+
   // 1) Mirror onto messages (legacy behavior) — Meta's status values
-  //    already match the CHECK constraint on messages.status. No
-  //    `.select()`: message_id is NOT unique (migration 009 — Meta ids
-  //    repeat across numbers), so this updates 0..N rows and must not
-  //    assume a single row.
-  const { error: msgErr } = await supabaseAdmin()
+  //    already match the CHECK constraint on messages.status.
+  //    Strictly scoped to account_id when phoneNumberId is provided to
+  //    guarantee zero cross-talk between tenants.
+  let msgQuery = supabaseAdmin()
     .from('messages')
     .update({ status: status.status })
     .eq('message_id', status.id)
+
+  if (scopedAccountId) {
+    msgQuery = msgQuery.eq('account_id', scopedAccountId)
+  }
+
+  const { error: msgErr } = await msgQuery
 
   if (msgErr) {
     console.error('Error updating message status:', msgErr)

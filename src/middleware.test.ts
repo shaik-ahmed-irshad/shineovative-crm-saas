@@ -15,6 +15,8 @@ let refreshedCookies: Array<{
   options: Record<string, unknown>;
 }> = [];
 
+let mockPlatformRole: string | null = null;
+
 vi.mock("@supabase/ssr", () => ({
   createServerClient: (
     _url: string,
@@ -32,6 +34,16 @@ vi.mock("@supabase/ssr", () => ({
         return { data: { user: mockUser } };
       },
     },
+    from: (_table: string) => ({
+      select: (_cols: string) => ({
+        eq: (_col: string, _val: unknown) => ({
+          maybeSingle: async () => ({
+            data: mockPlatformRole ? { platform_role: mockPlatformRole } : null,
+            error: null,
+          }),
+        }),
+      }),
+    }),
   }),
 }));
 
@@ -42,6 +54,7 @@ beforeEach(() => {
   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "anon-key";
   mockUser = null;
+  mockPlatformRole = null;
   refreshedCookies = [];
 });
 
@@ -109,5 +122,42 @@ describe("middleware — refreshed auth cookies survive redirects", () => {
     // No redirect — the normal NextResponse.next() already carries cookies.
     expect(res.headers.get("location")).toBeNull();
     expect(res.cookies.get(ROTATED.name)?.value).toBe(ROTATED.value);
+  });
+
+  it("redirects unauthenticated users attempting to access /super-admin to /login", async () => {
+    mockUser = null;
+    refreshedCookies = [ROTATED];
+
+    const res = await middleware(
+      new NextRequest("https://app.test/super-admin/dashboard"),
+    );
+
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toContain("/login");
+  });
+
+  it("redirects authenticated non-super_admin users attempting to access /super-admin to /dashboard", async () => {
+    mockUser = { id: "user-regular" };
+    mockPlatformRole = "none";
+    refreshedCookies = [ROTATED];
+
+    const res = await middleware(
+      new NextRequest("https://app.test/super-admin/dashboard"),
+    );
+
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toContain("/dashboard");
+  });
+
+  it("allows authenticated super_admin users through to /super-admin", async () => {
+    mockUser = { id: "user-super" };
+    mockPlatformRole = "super_admin";
+    refreshedCookies = [ROTATED];
+
+    const res = await middleware(
+      new NextRequest("https://app.test/super-admin/dashboard"),
+    );
+
+    expect(res.headers.get("location")).toBeNull();
   });
 });

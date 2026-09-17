@@ -107,3 +107,38 @@ export function canDeleteAccount(role: AccountRole): boolean {
 export function canTransferOwnership(role: AccountRole): boolean {
   return role === "owner";
 }
+
+// ============================================================
+// Platform role helpers (Milestone 1 — 101_saas_tenancy_and_platform_roles.sql)
+//
+// Platform administration hierarchy:
+//   - super_admin: full system-wide access to /super-admin, all tenants, and global actions.
+//   - support: read-only diagnostics across organizations.
+//   - none: standard tenant user.
+// ============================================================
+
+export type PlatformRole = "super_admin" | "support" | "none";
+
+export const PLATFORM_ROLES: readonly PlatformRole[] = [
+  "none",
+  "support",
+  "super_admin",
+] as const;
+
+/** Type-narrow an unknown string into a valid `PlatformRole`. */
+export function isPlatformRole(value: unknown): value is PlatformRole {
+  return (
+    typeof value === "string" &&
+    (PLATFORM_ROLES as readonly string[]).includes(value)
+  );
+}
+
+/** Check if role is platform super_admin. */
+export function isSuperAdmin(role?: PlatformRole | null): boolean {
+  return role === "super_admin";
+}
+
+/** Check if role is platform support or higher. */
+export function isPlatformSupport(role?: PlatformRole | null): boolean {
+  return role === "super_admin" || role === "support";
+}

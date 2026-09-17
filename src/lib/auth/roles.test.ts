@@ -10,6 +10,9 @@ import {
   canViewOnly,
   hasMinRole,
   isAccountRole,
+  isPlatformRole,
+  isPlatformSupport,
+  isSuperAdmin,
   roleRank,
 } from "./roles";
 
@@ -128,3 +131,32 @@ describe("capability predicates", () => {
     expect(canTransferOwnership("viewer")).toBe(false);
   });
 });
+
+describe("platform role helpers", () => {
+  it("validates valid and invalid platform roles", () => {
+    expect(isPlatformRole("super_admin")).toBe(true);
+    expect(isPlatformRole("support")).toBe(true);
+    expect(isPlatformRole("none")).toBe(true);
+    expect(isPlatformRole("admin")).toBe(false);
+    expect(isPlatformRole("owner")).toBe(false);
+    expect(isPlatformRole(null)).toBe(false);
+    expect(isPlatformRole(undefined)).toBe(false);
+  });
+
+  it("evaluates isSuperAdmin", () => {
+    expect(isSuperAdmin("super_admin")).toBe(true);
+    expect(isSuperAdmin("support")).toBe(false);
+    expect(isSuperAdmin("none")).toBe(false);
+    expect(isSuperAdmin(null)).toBe(false);
+    expect(isSuperAdmin(undefined)).toBe(false);
+  });
+
+  it("evaluates isPlatformSupport", () => {
+    expect(isPlatformSupport("super_admin")).toBe(true);
+    expect(isPlatformSupport("support")).toBe(true);
+    expect(isPlatformSupport("none")).toBe(false);
+    expect(isPlatformSupport(null)).toBe(false);
+    expect(isPlatformSupport(undefined)).toBe(false);
+  });
+});
+

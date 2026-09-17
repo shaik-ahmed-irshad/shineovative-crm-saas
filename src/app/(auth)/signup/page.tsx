@@ -35,6 +35,7 @@ function SignupPageInner() {
   const inviteToken = searchParams.get("invite");
 
   const [fullName, setFullName] = useState("");
+  const [organizationName, setOrganizationName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -74,6 +75,11 @@ function SignupPageInner() {
     e.preventDefault();
     setError(null);
 
+    if (!inviteToken && !organizationName.trim()) {
+      setError("Please enter your organization or company name");
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
@@ -87,12 +93,10 @@ function SignupPageInner() {
     setLoading(true);
 
     // If we have an invite token, point Supabase's verification
-    // email back at the join page so the user can accept after
-    // verifying. Without a token, Supabase uses its default
-    // redirect (the app root).
+    // email back at the join page. Without a token, redirect to /onboarding.
     const emailRedirectTo = inviteToken
       ? `${window.location.origin}/join/${encodeURIComponent(inviteToken)}`
-      : undefined;
+      : `${window.location.origin}/onboarding`;
 
     const { error } = await supabase.auth.signUp({
       email,
@@ -100,8 +104,11 @@ function SignupPageInner() {
       options: {
         data: {
           full_name: fullName,
+          ...(organizationName.trim()
+            ? { organization_name: organizationName.trim() }
+            : {}),
         },
-        ...(emailRedirectTo ? { emailRedirectTo } : {}),
+        emailRedirectTo,
       },
     });
 
@@ -165,12 +172,12 @@ function SignupPageInner() {
             )}
           </div>
           <CardTitle className="text-xl text-foreground">
-            {inviteToken ? "Create account & join" : "Create account"}
+            {inviteToken ? "Create account & join" : "Start 14-Day Free Trial"}
           </CardTitle>
           <CardDescription className="text-muted-foreground">
             {inviteToken
               ? "Verify your email, then accept the invitation to join your team."
-              : "Get started with CRM Template for WhatsApp"}
+              : `Create your ${BRAND_CONFIG.name} organization. Full All-In-One access, no credit card required.`}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -195,6 +202,23 @@ function SignupPageInner() {
                 className="border-border bg-muted text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20"
               />
             </div>
+
+            {!inviteToken && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="organizationName" className="text-muted-foreground">
+                  Company / Organization name
+                </Label>
+                <Input
+                  id="organizationName"
+                  type="text"
+                  placeholder="e.g. Acme Corporation"
+                  value={organizationName}
+                  onChange={(e) => setOrganizationName(e.target.value)}
+                  required
+                  className="border-border bg-muted text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20"
+                />
+              </div>
+            )}
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="email" className="text-muted-foreground">

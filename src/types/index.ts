@@ -1,5 +1,7 @@
-import type { AccountRole } from "@/lib/auth/roles";
+import type { AccountRole, PlatformRole } from "@/lib/auth/roles";
 import type { InteractiveMessagePayload } from "@/lib/whatsapp/interactive";
+
+export type { PlatformRole };
 
 export type {
   InteractiveMessagePayload,
@@ -45,20 +47,87 @@ export interface Profile {
    * `@/lib/auth/roles` rather than comparing this string directly.
    */
   account_role?: AccountRole;
+  /**
+   * Platform-wide role for SaaS administration ('super_admin' | 'support' | 'none').
+   * Governs access to /super-admin routes and cross-tenant actions.
+   */
+  platform_role?: PlatformRole;
   created_at: string;
 }
 
 // ============================================================
-// Account-sharing entities (017_account_sharing.sql)
+// Account-sharing entities (017_account_sharing.sql & 101_saas_tenancy_and_platform_roles.sql)
 // ============================================================
+
+export type AccountStatus = "trialing" | "active" | "past_due" | "suspended" | "cancelled";
+
+export type BillingGateway = "stripe" | "razorpay";
+export type BillingCycle = "monthly" | "annual";
+export type SubscriptionStatus = "trialing" | "active" | "past_due" | "cancelled" | "unpaid";
+
+export interface Subscription {
+  id: string;
+  account_id: string;
+  gateway: BillingGateway;
+  customer_id?: string | null;
+  subscription_id?: string | null;
+  plan_code: string;
+  billing_cycle: BillingCycle;
+  currency: "INR" | "USD";
+  status: SubscriptionStatus;
+  current_period_start: string;
+  current_period_end: string;
+  trial_ends_at?: string | null;
+  cancel_at_period_end: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BillingInvoice {
+  id: string;
+  account_id: string;
+  gateway: BillingGateway;
+  invoice_id: string;
+  amount_paid: number;
+  currency: "INR" | "USD";
+  receipt_url?: string | null;
+  paid_at: string;
+  created_at: string;
+}
 
 export interface Account {
   id: string;
   name: string;
+  /** URL-safe organization identifier */
+  slug?: string;
+  /** Lifecycle and billing status of the tenant organization */
+  status?: AccountStatus;
+  /** Subscription plan tier ('all_in_one') */
+  plan_tier?: string;
+  /** Optional custom logo URL */
+  logo_url?: string | null;
+  /** Regional timezone for scheduling and metrics (default: 'Asia/Kolkata') */
+  timezone?: string;
+  /** Timestamp when the organization completed initial onboarding setup */
+  onboarding_completed_at?: string | null;
   /** auth.users.id of the immutable owner. */
   owner_user_id: string;
   created_at: string;
   updated_at: string;
+}
+
+/**
+ * Immutable audit log record for platform administration operations.
+ */
+export interface SaasAuditLog {
+  id: string;
+  actor_user_id: string;
+  actor_email: string;
+  action: string;
+  target_account_id?: string | null;
+  details: Record<string, unknown>;
+  ip_address?: string | null;
+  created_at: string;
 }
 
 /**
